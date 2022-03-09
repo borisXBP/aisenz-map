@@ -1,0 +1,28 @@
+{
+	"name": "aisenz-map",
+	"version": "1.0.0-0.0.1",
+	"description": "一款基于 leaflet 开发的综合地图插件",
+	"main": "src/index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/borisXBP/aisenz-map.git"
+	},
+	"keywords": [
+		"aisenz",
+		"map",
+		"leaflet"
+	],
+	"author": "boris-xie",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/borisXBP/aisenz-map/issues"
+	},
+	"homepage": "https://github.com/borisXBP/aisenz-map#readme",
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	}
+}
