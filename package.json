@@ -1,6 +1,6 @@
 {
 	"name": "aisenz-map",
-	"version": "1.0.0-0.0.1",
+	"version": "1.0.0-0.0.5",
 	"description": "一款基于 leaflet 开发的综合地图插件",
 	"main": "src/index.js",
 	"scripts": {
@@ -24,5 +24,14 @@
 	"publishConfig": {
 		"access": "public",
 		"registry": "https://registry.npmjs.org/"
+	},
+	"dependencies": {
+		"gulp": "^4.0.2",
+		"gulp-clean-css": "^4.3.0",
+		"gulp-uglify": "^3.0.2",
+		"require-dir": "^1.2.0"
+	},
+	"devDependencies": {
+		"gulp-concat": "^2.6.1"
 	}
 }
