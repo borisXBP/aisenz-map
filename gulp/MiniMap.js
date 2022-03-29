@@ -19,7 +19,7 @@ gulp.task(
   gulp.series(function () {
     return gulp
       .src(["./leaflet/plugins/Leaflet-MiniMap-master/dist/images/*"])
-      .pipe(gulp.dest("./lib/images/"));
+      .pipe(gulp.dest("./images/"));
   })
 );
 

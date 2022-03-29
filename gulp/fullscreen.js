@@ -34,7 +34,7 @@ gulp.task(
   gulp.series(function () {
     return gulp
       .src(["./leaflet/plugins/Leaflet.fullscreen-gh-pages/dist/*.png"])
-      .pipe(gulp.dest("./lib/img/"));
+      .pipe(gulp.dest("./img/"));
   })
 );
 

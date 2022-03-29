@@ -32,7 +32,7 @@ gulp.task(
   gulp.series(function () {
     return gulp
       .src(["./leaflet/plugins/leaflet-measure-master/assets/*.png"])
-      .pipe(gulp.dest("./lib/img/"));
+      .pipe(gulp.dest("./img/"));
   })
 );
 

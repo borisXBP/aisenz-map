@@ -6,4 +6,12 @@ rollup.config.dev.js
 rollup.config.js
 gulpfile.js
 .gitignore
+leaflet
 leaflet/
+lib
+lib/
+gulp
+gulp/
+node_modules
+node_modules/
+
