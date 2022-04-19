@@ -31,6 +31,19 @@ gulp.task(
 );
 
 gulp.task(
+  "handle-js-file",
+  gulp.series(function () {
+    return gulp.src(["./js/*"]).pipe(gulp.dest("./lib/js/"));
+  })
+);
+
+gulp.task(
   "change-path",
-  gulp.series("handle-js", "handle-css", "handle-images", "handle-img")
+  gulp.series(
+    "handle-js",
+    "handle-css",
+    "handle-images",
+    "handle-img",
+    "handle-js-file"
+  )
 );

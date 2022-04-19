@@ -8,10 +8,12 @@ const pluginList = [
   "leaflet_draw",
   "MovingMarker",
   "NavBar",
-  "MiniMap",
-  "fullScreen",
   "measure",
-  "download",
+  "fullScreen",
+  "MiniMap",
+  "boris-download",
+  "boris-fallBack",
+  "boris-dialog",
 ];
 
 gulp.task("all", gulp.series("base", ...pluginList, "change-path"));

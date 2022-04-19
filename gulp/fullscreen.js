@@ -9,7 +9,7 @@ gulp.task(
     return gulp
       .src([
         "index.js",
-        "./leaflet/plugins/Leaflet.fullscreen-gh-pages/dist/Leaflet.fullScreen.min.js",
+        "./leaflet/plugins/Leaflet.fullscreen-gh-pages/dist/Leaflet.fullscreen.min.js",
       ])
       .pipe(concat("index.js"))
       .pipe(gulp.dest("./"));
@@ -40,5 +40,5 @@ gulp.task(
 
 gulp.task(
   "fullScreen", // 交互绘制和编辑
-  gulp.series("fullScreen-js", "fullScreen-css", "fullScreen-images")
+  gulp.series(/* "fullScreen-js", */ "fullScreen-css", "fullScreen-images")
 );

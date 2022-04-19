@@ -473,784 +473,415 @@ L.Marker.movingMarker = function (latlngs, duration, options) {
 
 })();
 
-(function(factory,window){if(typeof define==="function"&&define.amd){define(["leaflet"],factory)}else if(typeof exports==="object"){module.exports=factory(require("leaflet"))}if(typeof window!=="undefined"&&window.L){window.L.Control.MiniMap=factory(L);window.L.control.minimap=function(layer,options){return new window.L.Control.MiniMap(layer,options)}}})(function(L){var MiniMap=L.Control.extend({includes:L.Evented?L.Evented.prototype:L.Mixin.Events,options:{position:"bottomright",toggleDisplay:false,zoomLevelOffset:-5,zoomLevelFixed:false,centerFixed:false,zoomAnimation:false,autoToggleDisplay:false,minimized:false,width:150,height:150,collapsedWidth:19,collapsedHeight:19,aimingRectOptions:{color:"#ff7800",weight:1,clickable:false},shadowRectOptions:{color:"#000000",weight:1,clickable:false,opacity:0,fillOpacity:0},strings:{hideText:"Hide MiniMap",showText:"Show MiniMap"},mapOptions:{}},initialize:function(layer,options){L.Util.setOptions(this,options);this.options.aimingRectOptions.clickable=false;this.options.shadowRectOptions.clickable=false;this._layer=layer},onAdd:function(map){this._mainMap=map;this._container=L.DomUtil.create("div","leaflet-control-minimap");this._container.style.width=this.options.width+"px";this._container.style.height=this.options.height+"px";L.DomEvent.disableClickPropagation(this._container);L.DomEvent.on(this._container,"mousewheel",L.DomEvent.stopPropagation);var mapOptions={attributionControl:false,dragging:!this.options.centerFixed,zoomControl:false,zoomAnimation:this.options.zoomAnimation,autoToggleDisplay:this.options.autoToggleDisplay,touchZoom:this.options.centerFixed?"center":!this._isZoomLevelFixed(),scrollWheelZoom:this.options.centerFixed?"center":!this._isZoomLevelFixed(),doubleClickZoom:this.options.centerFixed?"center":!this._isZoomLevelFixed(),boxZoom:!this._isZoomLevelFixed(),crs:map.options.crs};mapOptions=L.Util.extend(this.options.mapOptions,mapOptions);this._miniMap=new L.Map(this._container,mapOptions);this._miniMap.addLayer(this._layer);this._mainMapMoving=false;this._miniMapMoving=false;this._userToggledDisplay=false;this._minimized=false;if(this.options.toggleDisplay){this._addToggleButton()}this._miniMap.whenReady(L.Util.bind(function(){this._aimingRect=L.rectangle(this._mainMap.getBounds(),this.options.aimingRectOptions).addTo(this._miniMap);this._shadowRect=L.rectangle(this._mainMap.getBounds(),this.options.shadowRectOptions).addTo(this._miniMap);this._mainMap.on("moveend",this._onMainMapMoved,this);this._mainMap.on("move",this._onMainMapMoving,this);this._miniMap.on("movestart",this._onMiniMapMoveStarted,this);this._miniMap.on("move",this._onMiniMapMoving,this);this._miniMap.on("moveend",this._onMiniMapMoved,this)},this));return this._container},addTo:function(map){L.Control.prototype.addTo.call(this,map);var center=this.options.centerFixed||this._mainMap.getCenter();this._miniMap.setView(center,this._decideZoom(true));this._setDisplay(this.options.minimized);return this},onRemove:function(map){this._mainMap.off("moveend",this._onMainMapMoved,this);this._mainMap.off("move",this._onMainMapMoving,this);this._miniMap.off("moveend",this._onMiniMapMoved,this);this._miniMap.removeLayer(this._layer)},changeLayer:function(layer){this._miniMap.removeLayer(this._layer);this._layer=layer;this._miniMap.addLayer(this._layer)},_addToggleButton:function(){this._toggleDisplayButton=this.options.toggleDisplay?this._createButton("",this._toggleButtonInitialTitleText(),"leaflet-control-minimap-toggle-display leaflet-control-minimap-toggle-display-"+this.options.position,this._container,this._toggleDisplayButtonClicked,this):undefined;this._toggleDisplayButton.style.width=this.options.collapsedWidth+"px";this._toggleDisplayButton.style.height=this.options.collapsedHeight+"px"},_toggleButtonInitialTitleText:function(){if(this.options.minimized){return this.options.strings.showText}else{return this.options.strings.hideText}},_createButton:function(html,title,className,container,fn,context){var link=L.DomUtil.create("a",className,container);link.innerHTML=html;link.href="#";link.title=title;var stop=L.DomEvent.stopPropagation;L.DomEvent.on(link,"click",stop).on(link,"mousedown",stop).on(link,"dblclick",stop).on(link,"click",L.DomEvent.preventDefault).on(link,"click",fn,context);return link},_toggleDisplayButtonClicked:function(){this._userToggledDisplay=true;if(!this._minimized){this._minimize()}else{this._restore()}},_setDisplay:function(minimize){if(minimize!==this._minimized){if(!this._minimized){this._minimize()}else{this._restore()}}},_minimize:function(){if(this.options.toggleDisplay){this._container.style.width=this.options.collapsedWidth+"px";this._container.style.height=this.options.collapsedHeight+"px";this._toggleDisplayButton.className+=" minimized-"+this.options.position;this._toggleDisplayButton.title=this.options.strings.showText}else{this._container.style.display="none"}this._minimized=true;this._onToggle()},_restore:function(){if(this.options.toggleDisplay){this._container.style.width=this.options.width+"px";this._container.style.height=this.options.height+"px";this._toggleDisplayButton.className=this._toggleDisplayButton.className.replace("minimized-"+this.options.position,"");this._toggleDisplayButton.title=this.options.strings.hideText}else{this._container.style.display="block"}this._minimized=false;this._onToggle()},_onMainMapMoved:function(e){if(!this._miniMapMoving){var center=this.options.centerFixed||this._mainMap.getCenter();this._mainMapMoving=true;this._miniMap.setView(center,this._decideZoom(true));this._setDisplay(this._decideMinimized())}else{this._miniMapMoving=false}this._aimingRect.setBounds(this._mainMap.getBounds())},_onMainMapMoving:function(e){this._aimingRect.setBounds(this._mainMap.getBounds())},_onMiniMapMoveStarted:function(e){if(!this.options.centerFixed){var lastAimingRect=this._aimingRect.getBounds();var sw=this._miniMap.latLngToContainerPoint(lastAimingRect.getSouthWest());var ne=this._miniMap.latLngToContainerPoint(lastAimingRect.getNorthEast());this._lastAimingRectPosition={sw:sw,ne:ne}}},_onMiniMapMoving:function(e){if(!this.options.centerFixed){if(!this._mainMapMoving&&this._lastAimingRectPosition){this._shadowRect.setBounds(new L.LatLngBounds(this._miniMap.containerPointToLatLng(this._lastAimingRectPosition.sw),this._miniMap.containerPointToLatLng(this._lastAimingRectPosition.ne)));this._shadowRect.setStyle({opacity:1,fillOpacity:.3})}}},_onMiniMapMoved:function(e){if(!this._mainMapMoving){this._miniMapMoving=true;this._mainMap.setView(this._miniMap.getCenter(),this._decideZoom(false));this._shadowRect.setStyle({opacity:0,fillOpacity:0})}else{this._mainMapMoving=false}},_isZoomLevelFixed:function(){var zoomLevelFixed=this.options.zoomLevelFixed;return this._isDefined(zoomLevelFixed)&&this._isInteger(zoomLevelFixed)},_decideZoom:function(fromMaintoMini){if(!this._isZoomLevelFixed()){if(fromMaintoMini){return this._mainMap.getZoom()+this.options.zoomLevelOffset}else{var currentDiff=this._miniMap.getZoom()-this._mainMap.getZoom();var proposedZoom=this._miniMap.getZoom()-this.options.zoomLevelOffset;var toRet;if(currentDiff>this.options.zoomLevelOffset&&this._mainMap.getZoom()<this._miniMap.getMinZoom()-this.options.zoomLevelOffset){if(this._miniMap.getZoom()>this._lastMiniMapZoom){toRet=this._mainMap.getZoom()+1;this._miniMap.setZoom(this._miniMap.getZoom()-1)}else{toRet=this._mainMap.getZoom()}}else{toRet=proposedZoom}this._lastMiniMapZoom=this._miniMap.getZoom();return toRet}}else{if(fromMaintoMini){return this.options.zoomLevelFixed}else{return this._mainMap.getZoom()}}},_decideMinimized:function(){if(this._userToggledDisplay){return this._minimized}if(this.options.autoToggleDisplay){if(this._mainMap.getBounds().contains(this._miniMap.getBounds())){return true}return false}return this._minimized},_isInteger:function(value){return typeof value==="number"},_isDefined:function(value){return typeof value!=="undefined"},_onToggle:function(){L.Util.requestAnimFrame(function(){L.DomEvent.on(this._container,"transitionend",this._fireToggleEvents,this);if(!L.Browser.any3d){L.Util.requestAnimFrame(this._fireToggleEvents,this)}},this)},_fireToggleEvents:function(){L.DomEvent.off(this._container,"transitionend",this._fireToggleEvents,this);var data={minimized:this._minimized};this.fire(this._minimized?"minimize":"restore",data);this.fire("toggle",data)}});L.Map.mergeOptions({miniMapControl:false});L.Map.addInitHook(function(){if(this.options.miniMapControl){this.miniMapControl=(new MiniMap).addTo(this)}});return MiniMap},window);
-(function(factory){var L;if(typeof define==="function"&&define.amd){define(["leaflet"],factory)}else if(typeof module!=="undefined"){L=require("leaflet");module.exports=factory(L)}else{if(typeof window.L==="undefined"){throw new Error("Leaflet must be loaded first")}factory(window.L)}})(function(L){L.Control.Fullscreen=L.Control.extend({options:{position:"topleft",title:{"false":"View Fullscreen","true":"Exit Fullscreen"}},onAdd:function(map){var container=L.DomUtil.create("div","leaflet-control-fullscreen leaflet-bar leaflet-control");this.link=L.DomUtil.create("a","leaflet-control-fullscreen-button leaflet-bar-part",container);this.link.href="#";this._map=map;this._map.on("fullscreenchange",this._toggleTitle,this);this._toggleTitle();L.DomEvent.on(this.link,"click",this._click,this);return container},_click:function(e){L.DomEvent.stopPropagation(e);L.DomEvent.preventDefault(e);this._map.toggleFullscreen(this.options)},_toggleTitle:function(){this.link.title=this.options.title[this._map.isFullscreen()]}});L.Map.include({isFullscreen:function(){return this._isFullscreen||false},toggleFullscreen:function(options){var container=this.getContainer();if(this.isFullscreen()){if(options&&options.pseudoFullscreen){this._disablePseudoFullscreen(container)}else if(document.exitFullscreen){document.exitFullscreen()}else if(document.mozCancelFullScreen){document.mozCancelFullScreen()}else if(document.webkitCancelFullScreen){document.webkitCancelFullScreen()}else if(document.msExitFullscreen){document.msExitFullscreen()}else{this._disablePseudoFullscreen(container)}}else{if(options&&options.pseudoFullscreen){this._enablePseudoFullscreen(container)}else if(container.requestFullscreen){container.requestFullscreen()}else if(container.mozRequestFullScreen){container.mozRequestFullScreen()}else if(container.webkitRequestFullscreen){container.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT)}else if(container.msRequestFullscreen){container.msRequestFullscreen()}else{this._enablePseudoFullscreen(container)}}},_enablePseudoFullscreen:function(container){L.DomUtil.addClass(container,"leaflet-pseudo-fullscreen");this._setFullscreen(true);this.fire("fullscreenchange")},_disablePseudoFullscreen:function(container){L.DomUtil.removeClass(container,"leaflet-pseudo-fullscreen");this._setFullscreen(false);this.fire("fullscreenchange")},_setFullscreen:function(fullscreen){this._isFullscreen=fullscreen;var container=this.getContainer();if(fullscreen){L.DomUtil.addClass(container,"leaflet-fullscreen-on")}else{L.DomUtil.removeClass(container,"leaflet-fullscreen-on")}this.invalidateSize()},_onFullscreenChange:function(e){var fullscreenElement=document.fullscreenElement||document.mozFullScreenElement||document.webkitFullscreenElement||document.msFullscreenElement;if(fullscreenElement===this.getContainer()&&!this._isFullscreen){this._setFullscreen(true);this.fire("fullscreenchange")}else if(fullscreenElement!==this.getContainer()&&this._isFullscreen){this._setFullscreen(false);this.fire("fullscreenchange")}}});L.Map.mergeOptions({fullscreenControl:false});L.Map.addInitHook(function(){if(this.options.fullscreenControl){this.fullscreenControl=new L.Control.Fullscreen(this.options.fullscreenControl);this.addControl(this.fullscreenControl)}var fullscreenchange;if("onfullscreenchange"in document){fullscreenchange="fullscreenchange"}else if("onmozfullscreenchange"in document){fullscreenchange="mozfullscreenchange"}else if("onwebkitfullscreenchange"in document){fullscreenchange="webkitfullscreenchange"}else if("onmsfullscreenchange"in document){fullscreenchange="MSFullscreenChange"}if(fullscreenchange){var onFullscreenChange=L.bind(this._onFullscreenChange,this);this.whenReady(function(){L.DomEvent.on(document,fullscreenchange,onFullscreenChange)});this.on("unload",function(){L.DomEvent.off(document,fullscreenchange,onFullscreenChange)})}});L.control.fullscreen=function(options){return new L.Control.Fullscreen(options)}});
 !function (e) { function t(n) { if (r[n]) return r[n].exports; var o = r[n] = { i: n, l: !1, exports: {} }; return e[n].call(o.exports, o, o.exports, t), o.l = !0, o.exports } var r = {}; t.m = e, t.c = r, t.d = function (e, r, n) { t.o(e, r) || Object.defineProperty(e, r, { configurable: !1, enumerable: !0, get: n }) }, t.n = function (e) { var r = e && e.__esModule ? function () { return e.default } : function () { return e }; return t.d(r, "a", r), r }, t.o = function (e, t) { return Object.prototype.hasOwnProperty.call(e, t) }, t.p = "/dist/", t(t.s = 28) }([function (e, t, r) { function n(e) { return null == e ? void 0 === e ? u : a : l && l in Object(e) ? i(e) : s(e) } var o = r(4), i = r(38), s = r(39), a = "[object Null]", u = "[object Undefined]", l = o ? o.toStringTag : void 0; e.exports = n }, function (e, t) { function r(e) { return null != e && "object" == typeof e } e.exports = r }, function (e, t) { function r(e) { var t = typeof e; return null != e && ("object" == t || "function" == t) } e.exports = r }, function (e, t, r) { "use strict"; function n(e, t, r) { if (r = r || {}, !h(r)) throw new Error("options is invalid"); var n = r.bbox, o = r.id; if (void 0 === e) throw new Error("geometry is required"); if (t && t.constructor !== Object) throw new Error("properties must be an Object"); n && d(n), o && m(o); var i = { type: "Feature" }; return o && (i.id = o), n && (i.bbox = n), i.properties = t || {}, i.geometry = e, i } function o(e, t, r) { if (!e) throw new Error("coordinates is required"); if (!Array.isArray(e)) throw new Error("coordinates must be an Array"); if (e.length < 2) throw new Error("coordinates must be at least 2 numbers long"); if (!p(e[0]) || !p(e[1])) throw new Error("coordinates must contain numbers"); return n({ type: "Point", coordinates: e }, t, r) } function i(e, t, r) { if (!e) throw new Error("coordinates is required"); for (var o = 0; o < e.length; o++) { var i = e[o]; if (i.length < 4) throw new Error("Each LinearRing of a Polygon must have 4 or more Positions."); for (var s = 0; s < i[i.length - 1].length; s++) { if (0 === o && 0 === s && !p(i[0][0]) || !p(i[0][1])) throw new Error("coordinates must contain numbers"); if (i[i.length - 1][s] !== i[0][s]) throw new Error("First and last Position are not equivalent.") } } return n({ type: "Polygon", coordinates: e }, t, r) } function s(e, t, r) { if (!e) throw new Error("coordinates is required"); if (e.length < 2) throw new Error("coordinates must be an array of two or more positions"); if (!p(e[0][1]) || !p(e[0][1])) throw new Error("coordinates must contain numbers"); return n({ type: "LineString", coordinates: e }, t, r) } function a(e, t, r) { if (!e) throw new Error("coordinates is required"); return n({ type: "MultiLineString", coordinates: e }, t, r) } function u(e, t, r) { if (!e) throw new Error("coordinates is required"); return n({ type: "MultiPoint", coordinates: e }, t, r) } function l(e, t, r) { if (!e) throw new Error("coordinates is required"); return n({ type: "MultiPolygon", coordinates: e }, t, r) } function c(e, t) { if (void 0 === e || null === e) throw new Error("radians is required"); if (t && "string" != typeof t) throw new Error("units must be a string"); var r = y[t || "kilometers"]; if (!r) throw new Error(t + " units is invalid"); return e * r } function f(e) { if (null === e || void 0 === e) throw new Error("degrees is required"); return e % 360 * Math.PI / 180 } function p(e) { return !isNaN(e) && null !== e && !Array.isArray(e) } function h(e) { return !!e && e.constructor === Object } function d(e) { if (!e) throw new Error("bbox is required"); if (!Array.isArray(e)) throw new Error("bbox must be an Array"); if (4 !== e.length && 6 !== e.length) throw new Error("bbox must be an Array of 4 or 6 numbers"); e.forEach(function (e) { if (!p(e)) throw new Error("bbox must only contain numbers") }) } function m(e) { if (!e) throw new Error("id is required"); if (-1 === ["string", "number"].indexOf(typeof e)) throw new Error("id must be a number or a string") } r.d(t, "b", function () { return n }), r.d(t, "f", function () { return o }), r.d(t, "e", function () { return s }), r.d(t, "g", function () { return c }), r.d(t, "a", function () { return f }), r.d(t, "c", function () { return p }), r.d(t, "d", function () { return h }); var y = { meters: 6371008.8, metres: 6371008.8, millimeters: 6371008800, millimetres: 6371008800, centimeters: 637100880, centimetres: 637100880, kilometers: 6371.0088, kilometres: 6371.0088, miles: 3958.761333810546, nauticalmiles: 6371008.8 / 1852, inches: 6371008.8 * 39.37, yards: 6371008.8 / 1.0936, feet: 20902260.511392, radians: 1, degrees: 6371008.8 / 111325 } }, function (e, t, r) { var n = r(5), o = n.Symbol; e.exports = o }, function (e, t, r) { var n = r(11), o = "object" == typeof self && self && self.Object === Object && self, i = n || o || Function("return this")(); e.exports = i }, function (e, t) { function r(e, t) { return e === t || e !== e && t !== t } e.exports = r }, function (e, t, r) { function n(e) { return null != e && i(e.length) && !o(e) } var o = r(10), i = r(16); e.exports = n }, function (e, t, r) { function n(e, t, r) { "__proto__" == t && o ? o(e, t, { configurable: !0, enumerable: !0, value: r, writable: !0 }) : e[t] = r } var o = r(9); e.exports = n }, function (e, t, r) { var n = r(35), o = function () { try { var e = n(Object, "defineProperty"); return e({}, "", {}), e } catch (e) { } }(); e.exports = o }, function (e, t, r) { function n(e) { if (!i(e)) return !1; var t = o(e); return t == a || t == u || t == s || t == l } var o = r(0), i = r(2), s = "[object AsyncFunction]", a = "[object Function]", u = "[object GeneratorFunction]", l = "[object Proxy]"; e.exports = n }, function (e, t, r) { (function (t) { var r = "object" == typeof t && t && t.Object === Object && t; e.exports = r }).call(t, r(37)) }, function (e, t, r) { function n(e, t) { return s(i(e, t, o), e + "") } var o = r(13), i = r(45), s = r(46); e.exports = n }, function (e, t) { function r(e) { return e } e.exports = r }, function (e, t) { function r(e, t, r) { switch (r.length) { case 0: return e.call(t); case 1: return e.call(t, r[0]); case 2: return e.call(t, r[0], r[1]); case 3: return e.call(t, r[0], r[1], r[2]) } return e.apply(t, r) } e.exports = r }, function (e, t, r) { function n(e, t, r) { if (!a(r)) return !1; var n = typeof t; return !!("number" == n ? i(r) && s(t, r.length) : "string" == n && t in r) && o(r[t], e) } var o = r(6), i = r(7), s = r(17), a = r(2); e.exports = n }, function (e, t) { function r(e) { return "number" == typeof e && e > -1 && e % 1 == 0 && e <= n } var n = 9007199254740991; e.exports = r }, function (e, t) { function r(e, t) { var r = typeof e; return !!(t = null == t ? n : t) && ("number" == r || "symbol" != r && o.test(e)) && e > -1 && e % 1 == 0 && e < t } var n = 9007199254740991, o = /^(?:0|[1-9]\d*)$/; e.exports = r }, function (e, t, r) { function n(e, t) { var r = s(e), n = !r && i(e), c = !r && !n && a(e), p = !r && !n && !c && l(e), h = r || n || c || p, d = h ? o(e.length, String) : [], m = d.length; for (var y in e) !t && !f.call(e, y) || h && ("length" == y || c && ("offset" == y || "parent" == y) || p && ("buffer" == y || "byteLength" == y || "byteOffset" == y) || u(y, m)) || d.push(y); return d } var o = r(51), i = r(52), s = r(19), a = r(54), u = r(17), l = r(56), c = Object.prototype, f = c.hasOwnProperty; e.exports = n }, function (e, t) { var r = Array.isArray; e.exports = r }, function (e, t) { e.exports = function (e) { return e.webpackPolyfill || (e.deprecate = function () { }, e.paths = [], e.children || (e.children = []), Object.defineProperty(e, "loaded", { enumerable: !0, get: function () { return e.l } }), Object.defineProperty(e, "id", { enumerable: !0, get: function () { return e.i } }), e.webpackPolyfill = 1), e } }, function (e, t) { function r(e) { var t = e && e.constructor; return e === ("function" == typeof t && t.prototype || n) } var n = Object.prototype; e.exports = r }, function (e, t, r) { function n(e) { if (!i(e)) return !1; var t = o(e); return t == u || t == a || "string" == typeof e.message && "string" == typeof e.name && !s(e) } var o = r(0), i = r(1), s = r(63), a = "[object DOMException]", u = "[object Error]"; e.exports = n }, function (e, t) { function r(e, t) { return function (r) { return e(t(r)) } } e.exports = r }, function (e, t) { function r(e, t) { for (var r = -1, n = null == e ? 0 : e.length, o = Array(n) ; ++r < n;) o[r] = t(e[r], r, e); return o } e.exports = r }, function (e, t) { var r = /<%=([\s\S]+?)%>/g; e.exports = r }, function (e, t, r) { function n(e) { return null == e ? "" : o(e) } var o = r(75); e.exports = n }, function (e, t, r) { "use strict"; function n(e, t, r) { if (null !== e) for (var o, i, s, a, u, l, c, f, p = 0, h = 0, d = e.type, m = "FeatureCollection" === d, y = "Feature" === d, v = m ? e.features.length : 1, g = 0; g < v; g++) { c = m ? e.features[g].geometry : y ? e.geometry : e, f = !!c && "GeometryCollection" === c.type, u = f ? c.geometries.length : 1; for (var b = 0; b < u; b++) { var _ = 0, j = 0; if (null !== (a = f ? c.geometries[b] : c)) { l = a.coordinates; var x = a.type; switch (p = !r || "Polygon" !== x && "MultiPolygon" !== x ? 0 : 1, x) { case null: break; case "Point": if (!1 === t(l, h, g, _, j)) return !1; h++, _++; break; case "LineString": case "MultiPoint": for (o = 0; o < l.length; o++) { if (!1 === t(l[o], h, g, _, j)) return !1; h++, "MultiPoint" === x && _++ } "LineString" === x && _++; break; case "Polygon": case "MultiLineString": for (o = 0; o < l.length; o++) { for (i = 0; i < l[o].length - p; i++) { if (!1 === t(l[o][i], h, g, _, j)) return !1; h++ } "MultiLineString" === x && _++, "Polygon" === x && j++ } "Polygon" === x && _++; break; case "MultiPolygon": for (o = 0; o < l.length; o++) { for ("MultiPolygon" === x && (j = 0), i = 0; i < l[o].length; i++) { for (s = 0; s < l[o][i].length - p; s++) { if (!1 === t(l[o][i][s], h, g, _, j)) return !1; h++ } j++ } _++ } break; case "GeometryCollection": for (o = 0; o < a.geometries.length; o++) if (!1 === n(a.geometries[o], t, r)) return !1; break; default: throw new Error("Unknown Geometry Type") } } } } } function o(e, t) { var r, n, o, i, s, a, u, l, c, f, p = 0, h = "FeatureCollection" === e.type, d = "Feature" === e.type, m = h ? e.features.length : 1; for (r = 0; r < m; r++) { for (a = h ? e.features[r].geometry : d ? e.geometry : e, l = h ? e.features[r].properties : d ? e.properties : {}, c = h ? e.features[r].bbox : d ? e.bbox : void 0, f = h ? e.features[r].id : d ? e.id : void 0, u = !!a && "GeometryCollection" === a.type, s = u ? a.geometries.length : 1, o = 0; o < s; o++) if (null !== (i = u ? a.geometries[o] : a)) switch (i.type) { case "Point": case "LineString": case "MultiPoint": case "Polygon": case "MultiLineString": case "MultiPolygon": if (!1 === t(i, p, l, c, f)) return !1; break; case "GeometryCollection": for (n = 0; n < i.geometries.length; n++) if (!1 === t(i.geometries[n], p, l, c, f)) return !1; break; default: throw new Error("Unknown Geometry Type") } else if (!1 === t(null, p, l, c, f)) return !1; p++ } } function i(e, t, r) { var n = r; return o(e, function (e, o, i, s, a) { n = 0 === o && void 0 === r ? e : t(n, e, o, i, s, a) }), n } function s(e, t) { o(e, function (e, r, n, o, i) { var s = null === e ? null : e.type; switch (s) { case null: case "Point": case "LineString": case "Polygon": if (!1 === t(Object(l.b)(e, n, { bbox: o, id: i }), r, 0)) return !1; return } var a; switch (s) { case "MultiPoint": a = "Point"; break; case "MultiLineString": a = "LineString"; break; case "MultiPolygon": a = "Polygon" } for (var u = 0; u < e.coordinates.length; u++) { var c = e.coordinates[u], f = { type: a, coordinates: c }; if (!1 === t(Object(l.b)(f, n), r, u)) return !1 } }) } function a(e, t) { s(e, function (e, r, o) { var i = 0; if (e.geometry) { var s = e.geometry.type; if ("Point" !== s && "MultiPoint" !== s) { var a; return !1 !== n(e, function (n, s, u, c, f) { if (void 0 === a) return void (a = n); var p = Object(l.e)([a, n], e.properties); if (!1 === t(p, r, o, f, i)) return !1; i++, a = n }) && void 0 } } }) } function u(e, t, r) { var n = r, o = !1; return a(e, function (e, i, s, a, u) { n = !1 === o && void 0 === r ? e : t(n, e, i, s, a, u), o = !0 }), n } r.d(t, "a", function () { return i }), r.d(t, "b", function () { return u }); var l = r(3) }, function (e, t, r) { e.exports = r(29) }, function (e, t, r) { "use strict"; function n(e) { return e && e.__esModule ? e : { default: e } } r(30); var o = r(31), i = n(o), s = r(79), a = n(s), u = r(80), l = n(u), c = r(85), f = function (e) { if (e && e.__esModule) return e; var t = {}; if (null != e) for (var r in e) Object.prototype.hasOwnProperty.call(e, r) && (t[r] = e[r]); return t.default = e, t }(c), p = r(86), h = n(p), d = r(87), m = r(88), y = { imports: { numberFormat: d.numberFormat }, interpolate: /{{([\s\S]+?)}}/g }, v = (0, i.default)(m.controlTemplate, y), g = (0, i.default)(m.resultsTemplate, y), b = (0, i.default)(m.pointPopupTemplate, y), _ = (0, i.default)(m.linePopupTemplate, y), j = (0, i.default)(m.areaPopupTemplate, y); L.Control.Measure = L.Control.extend({ _className: "leaflet-control-measure", options: { units: {}, position: "topright", primaryLengthUnit: "feet", secondaryLengthUnit: "miles", primaryAreaUnit: "acres", activeColor: "#ABE67E", completedColor: "#C8F2BE", captureZIndex: 1e4, popupOptions: { className: "leaflet-measure-resultpopup", autoPanPadding: [10, 10] } }, initialize: function (e) { L.setOptions(this, e); var t = this.options, r = t.activeColor, n = t.completedColor; this._symbols = new h.default({ activeColor: r, completedColor: n }), this.options.units = L.extend({}, a.default, this.options.units) }, onAdd: function (e) { return this._map = e, this._latlngs = [], this._initLayout(), e.on("click", this._collapse, this), this._layer = L.layerGroup().addTo(e), this._container }, onRemove: function (e) { e.off("click", this._collapse, this), e.removeLayer(this._layer) }, _initLayout: function () { var e = this._className, t = this._container = L.DomUtil.create("div", e + " leaflet-bar"); t.innerHTML = v({ model: { className: e } }), t.setAttribute("aria-haspopup", !0), L.DomEvent.disableClickPropagation(t), L.DomEvent.disableScrollPropagation(t); var r = this.$toggle = (0, c.selectOne)(".js-toggle", t); this.$interaction = (0, c.selectOne)(".js-interaction", t); var n = (0, c.selectOne)(".js-start", t), o = (0, c.selectOne)(".js-cancel", t), i = (0, c.selectOne)(".js-finish", t); this.$startPrompt = (0, c.selectOne)(".js-startprompt", t), this.$measuringPrompt = (0, c.selectOne)(".js-measuringprompt", t), this.$startHelp = (0, c.selectOne)(".js-starthelp", t), this.$results = (0, c.selectOne)(".js-results", t), this.$measureTasks = (0, c.selectOne)(".js-measuretasks", t), this._collapse(), this._updateMeasureNotStarted(), L.Browser.android || (L.DomEvent.on(t, "mouseenter", this._expand, this), L.DomEvent.on(t, "mouseleave", this._collapse, this)), L.DomEvent.on(r, "click", L.DomEvent.stop), L.Browser.touch ? L.DomEvent.on(r, "click", this._expand, this) : L.DomEvent.on(r, "focus", this._expand, this), L.DomEvent.on(n, "click", L.DomEvent.stop), L.DomEvent.on(n, "click", this._startMeasure, this), L.DomEvent.on(o, "click", L.DomEvent.stop), L.DomEvent.on(o, "click", this._finishMeasure, this), L.DomEvent.on(i, "click", L.DomEvent.stop), L.DomEvent.on(i, "click", this._handleMeasureDoubleClick, this) }, _expand: function () { f.hide(this.$toggle), f.show(this.$interaction) }, _collapse: function () { this._locked || (f.hide(this.$interaction), f.show(this.$toggle)) }, _updateMeasureNotStarted: function () { f.hide(this.$startHelp), f.hide(this.$results), f.hide(this.$measureTasks), f.hide(this.$measuringPrompt), f.show(this.$startPrompt) }, _updateMeasureStartedNoPoints: function () { f.hide(this.$results), f.show(this.$startHelp), f.show(this.$measureTasks), f.hide(this.$startPrompt), f.show(this.$measuringPrompt) }, _updateMeasureStartedWithPoints: function () { f.hide(this.$startHelp), f.show(this.$results), f.show(this.$measureTasks), f.hide(this.$startPrompt), f.show(this.$measuringPrompt) }, _startMeasure: function () { this._locked = !0, this._measureVertexes = L.featureGroup().addTo(this._layer), this._captureMarker = L.marker(this._map.getCenter(), { clickable: !0, zIndexOffset: this.options.captureZIndex, opacity: 0 }).addTo(this._layer), this._setCaptureMarkerIcon(), this._captureMarker.on("mouseout", this._handleMapMouseOut, this).on("dblclick", this._handleMeasureDoubleClick, this).on("click", this._handleMeasureClick, this), this._map.on("mousemove", this._handleMeasureMove, this).on("mouseout", this._handleMapMouseOut, this).on("move", this._centerCaptureMarker, this).on("resize", this._setCaptureMarkerIcon, this), L.DomEvent.on(this._container, "mouseenter", this._handleMapMouseOut, this), this._updateMeasureStartedNoPoints(), this._map.fire("measurestart", null, !1) }, _finishMeasure: function () { var e = L.extend({}, this._resultsModel, { points: this._latlngs }); this._locked = !1, L.DomEvent.off(this._container, "mouseover", this._handleMapMouseOut, this), this._clearMeasure(), this._captureMarker.off("mouseout", this._handleMapMouseOut, this).off("dblclick", this._handleMeasureDoubleClick, this).off("click", this._handleMeasureClick, this), this._map.off("mousemove", this._handleMeasureMove, this).off("mouseout", this._handleMapMouseOut, this).off("move", this._centerCaptureMarker, this).off("resize", this._setCaptureMarkerIcon, this), this._layer.removeLayer(this._measureVertexes).removeLayer(this._captureMarker), this._measureVertexes = null, this._updateMeasureNotStarted(), this._collapse(), this._map.fire("measurefinish", e, !1) }, _clearMeasure: function () { this._latlngs = [], this._resultsModel = null, this._measureVertexes.clearLayers(), this._measureDrag && this._layer.removeLayer(this._measureDrag), this._measureArea && this._layer.removeLayer(this._measureArea), this._measureBoundary && this._layer.removeLayer(this._measureBoundary), this._measureDrag = null, this._measureArea = null, this._measureBoundary = null }, _centerCaptureMarker: function () { this._captureMarker.setLatLng(this._map.getCenter()) }, _setCaptureMarkerIcon: function () { this._captureMarker.setIcon(L.divIcon({ iconSize: this._map.getSize().multiplyBy(2) })) }, _getMeasurementDisplayStrings: function (e) { function t(e, t, o, i, s) { if (t && n[t]) { var a = r(e, n[t], i, s); if (o && n[o]) { a = a + " (" + r(e, n[o], i, s) + ")" } return a } return r(e, null, i, s) } function r(e, t, r, n) { var o = { acres: "Acres", feet: "Feet", kilometers: "Kilometers", hectares: "Hectares", meters: "Meters", miles: "Miles", sqfeet: "Sq Feet", sqmeters: "Sq Meters", sqmiles: "Sq Miles" }, i = L.extend({ factor: 1, decimals: 0 }, t); return [(0, d.numberFormat)(e * i.factor, i.decimals, r || ".", n || ","), o[i.display] || i.display].join(" ") } var n = this.options.units; return { lengthDisplay: t(e.length, this.options.primaryLengthUnit, this.options.secondaryLengthUnit, this.options.decPoint, this.options.thousandsSep), areaDisplay: t(e.area, this.options.primaryAreaUnit, this.options.secondaryAreaUnit, this.options.decPoint, this.options.thousandsSep) } }, _updateResults: function () { var e = (0, l.default)(this._latlngs), t = this._resultsModel = L.extend({}, e, this._getMeasurementDisplayStrings(e), { pointCount: this._latlngs.length }); this.$results.innerHTML = g({ model: t }) }, _handleMeasureMove: function (e) { this._measureDrag ? this._measureDrag.setLatLng(e.latlng) : this._measureDrag = L.circleMarker(e.latlng, this._symbols.getSymbol("measureDrag")).addTo(this._layer), this._measureDrag.bringToFront() }, _handleMeasureDoubleClick: function () { var e = this._latlngs, t = void 0, r = void 0; if (this._finishMeasure(), e.length) { e.length > 2 && e.push(e[0]); var n = (0, l.default)(e); 1 === e.length ? (t = L.circleMarker(e[0], this._symbols.getSymbol("resultPoint")), r = b({ model: n })) : 2 === e.length ? (t = L.polyline(e, this._symbols.getSymbol("resultLine")), r = _({ model: L.extend({}, n, this._getMeasurementDisplayStrings(n)) })) : (t = L.polygon(e, this._symbols.getSymbol("resultArea")), r = j({ model: L.extend({}, n, this._getMeasurementDisplayStrings(n)) })); var o = L.DomUtil.create("div", ""); o.innerHTML = r; var i = (0, c.selectOne)(".js-zoomto", o); i && (L.DomEvent.on(i, "click", L.DomEvent.stop), L.DomEvent.on(i, "click", function () { t.getBounds ? this._map.fitBounds(t.getBounds(), { padding: [20, 20], maxZoom: 17 }) : t.getLatLng && this._map.panTo(t.getLatLng()) }, this)); var s = (0, c.selectOne)(".js-deletemarkup", o); s && (L.DomEvent.on(s, "click", L.DomEvent.stop), L.DomEvent.on(s, "click", function () { this._layer.removeLayer(t) }, this)), t.addTo(this._layer), t.bindPopup(o, this.options.popupOptions), t.getBounds ? t.openPopup(t.getBounds().getCenter()) : t.getLatLng && t.openPopup(t.getLatLng()) } }, _handleMeasureClick: function (e) { var t = this._map.mouseEventToLatLng(e.originalEvent), r = this._latlngs[this._latlngs.length - 1], n = this._symbols.getSymbol("measureVertex"); r && t.equals(r) || (this._latlngs.push(t), this._addMeasureArea(this._latlngs), this._addMeasureBoundary(this._latlngs), this._measureVertexes.eachLayer(function (e) { e.setStyle(n), e._path.setAttribute("class", n.className) }), this._addNewVertex(t), this._measureBoundary && this._measureBoundary.bringToFront(), this._measureVertexes.bringToFront()), this._updateResults(), this._updateMeasureStartedWithPoints() }, _handleMapMouseOut: function () { this._measureDrag && (this._layer.removeLayer(this._measureDrag), this._measureDrag = null) }, _addNewVertex: function (e) { L.circleMarker(e, this._symbols.getSymbol("measureVertexActive")).addTo(this._measureVertexes) }, _addMeasureArea: function (e) { if (e.length < 3) return void (this._measureArea && (this._layer.removeLayer(this._measureArea), this._measureArea = null)); this._measureArea ? this._measureArea.setLatLngs(e) : this._measureArea = L.polygon(e, this._symbols.getSymbol("measureArea")).addTo(this._layer) }, _addMeasureBoundary: function (e) { if (e.length < 2) return void (this._measureBoundary && (this._layer.removeLayer(this._measureBoundary), this._measureBoundary = null)); this._measureBoundary ? this._measureBoundary.setLatLngs(e) : this._measureBoundary = L.polyline(e, this._symbols.getSymbol("measureBoundary")).addTo(this._layer) } }), L.Map.mergeOptions({ measureControl: !1 }), L.Map.addInitHook(function () { this.options.measureControl && (this.measureControl = (new L.Control.Measure).addTo(this)) }), L.control.measure = function (e) { return new L.Control.Measure(e) } }, function (e, t) { }, function (e, t, r) { function n(e, t, r) { var n = h.imports._.templateSettings || h; r && c(e, t, r) && (t = void 0), e = d(e), t = o({}, t, n, a); var j, x, M = o({}, t.imports, n.imports, a), w = f(M), L = s(M, w), O = 0, P = t.interpolate || b, k = "__p += '", C = RegExp((t.escape || b).source + "|" + P.source + "|" + (P === p ? g : b).source + "|" + (t.evaluate || b).source + "|$", "g"), E = "sourceURL" in t ? "//# sourceURL=" + t.sourceURL + "\n" : ""; e.replace(C, function (t, r, n, o, i, s) { return n || (n = o), k += e.slice(O, s).replace(_, u), r && (j = !0, k += "' +\n__e(" + r + ") +\n'"), i && (x = !0, k += "';\n" + i + ";\n__p += '"), n && (k += "' +\n((__t = (" + n + ")) == null ? '' : __t) +\n'"), O = s + t.length, t }), k += "';\n"; var S = t.variable; S || (k = "with (obj) {\n" + k + "\n}\n"), k = (x ? k.replace(m, "") : k).replace(y, "$1").replace(v, "$1;"), k = "function(" + (S || "obj") + ") {\n" + (S ? "" : "obj || (obj = {});\n") + "var __t, __p = ''" + (j ? ", __e = _.escape" : "") + (x ? ", __j = Array.prototype.join;\nfunction print() { __p += __j.call(arguments, '') }\n" : ";\n") + k + "return __p\n}"; var A = i(function () { return Function(w, E + "return " + k).apply(void 0, L) }); if (A.source = k, l(A)) throw A; return A } var o = r(32), i = r(62), s = r(65), a = r(66), u = r(67), l = r(22), c = r(15), f = r(68), p = r(25), h = r(71), d = r(26), m = /\b__p \+= '';/g, y = /\b(__p \+=) '' \+/g, v = /(__e\(.*?\)|\b__t\)) \+\n'';/g, g = /\$\{([^\\}]*(?:\\.[^\\}]*)*)\}/g, b = /($^)/, _ = /['\n\r\u2028\u2029\\]/g; e.exports = n }, function (e, t, r) { var n = r(33), o = r(44), i = r(50), s = o(function (e, t, r, o) { n(t, i(t), e, o) }); e.exports = s }, function (e, t, r) { function n(e, t, r, n) { var s = !r; r || (r = {}); for (var a = -1, u = t.length; ++a < u;) { var l = t[a], c = n ? n(r[l], e[l], l, r, e) : void 0; void 0 === c && (c = e[l]), s ? i(r, l, c) : o(r, l, c) } return r } var o = r(34), i = r(8); e.exports = n }, function (e, t, r) { function n(e, t, r) { var n = e[t]; a.call(e, t) && i(n, r) && (void 0 !== r || t in e) || o(e, t, r) } var o = r(8), i = r(6), s = Object.prototype, a = s.hasOwnProperty; e.exports = n }, function (e, t, r) { function n(e, t) { var r = i(e, t); return o(r) ? r : void 0 } var o = r(36), i = r(43); e.exports = n }, function (e, t, r) { function n(e) { return !(!s(e) || i(e)) && (o(e) ? d : l).test(a(e)) } var o = r(10), i = r(40), s = r(2), a = r(42), u = /[\\^$.*+?()[\]{}|]/g, l = /^\[object .+?Constructor\]$/, c = Function.prototype, f = Object.prototype, p = c.toString, h = f.hasOwnProperty, d = RegExp("^" + p.call(h).replace(u, "\\$&").replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, "$1.*?") + "$"); e.exports = n }, function (e, t) { var r; r = function () { return this }(); try { r = r || Function("return this")() || (0, eval)("this") } catch (e) { "object" == typeof window && (r = window) } e.exports = r }, function (e, t, r) { function n(e) { var t = s.call(e, u), r = e[u]; try { e[u] = void 0; var n = !0 } catch (e) { } var o = a.call(e); return n && (t ? e[u] = r : delete e[u]), o } var o = r(4), i = Object.prototype, s = i.hasOwnProperty, a = i.toString, u = o ? o.toStringTag : void 0; e.exports = n }, function (e, t) { function r(e) { return o.call(e) } var n = Object.prototype, o = n.toString; e.exports = r }, function (e, t, r) { function n(e) { return !!i && i in e } var o = r(41), i = function () { var e = /[^.]+$/.exec(o && o.keys && o.keys.IE_PROTO || ""); return e ? "Symbol(src)_1." + e : "" }(); e.exports = n }, function (e, t, r) { var n = r(5), o = n["__core-js_shared__"]; e.exports = o }, function (e, t) { function r(e) { if (null != e) { try { return o.call(e) } catch (e) { } try { return e + "" } catch (e) { } } return "" } var n = Function.prototype, o = n.toString; e.exports = r }, function (e, t) { function r(e, t) { return null == e ? void 0 : e[t] } e.exports = r }, function (e, t, r) { function n(e) { return o(function (t, r) { var n = -1, o = r.length, s = o > 1 ? r[o - 1] : void 0, a = o > 2 ? r[2] : void 0; for (s = e.length > 3 && "function" == typeof s ? (o--, s) : void 0, a && i(r[0], r[1], a) && (s = o < 3 ? void 0 : s, o = 1), t = Object(t) ; ++n < o;) { var u = r[n]; u && e(t, u, n, s) } return t }) } var o = r(12), i = r(15); e.exports = n }, function (e, t, r) { function n(e, t, r) { return t = i(void 0 === t ? e.length - 1 : t, 0), function () { for (var n = arguments, s = -1, a = i(n.length - t, 0), u = Array(a) ; ++s < a;) u[s] = n[t + s]; s = -1; for (var l = Array(t + 1) ; ++s < t;) l[s] = n[s]; return l[t] = r(u), o(e, this, l) } } var o = r(14), i = Math.max; e.exports = n }, function (e, t, r) { var n = r(47), o = r(49), i = o(n); e.exports = i }, function (e, t, r) { var n = r(48), o = r(9), i = r(13), s = o ? function (e, t) { return o(e, "toString", { configurable: !0, enumerable: !1, value: n(t), writable: !0 }) } : i; e.exports = s }, function (e, t) { function r(e) { return function () { return e } } e.exports = r }, function (e, t) { function r(e) { var t = 0, r = 0; return function () { var s = i(), a = o - (s - r); if (r = s, a > 0) { if (++t >= n) return arguments[0] } else t = 0; return e.apply(void 0, arguments) } } var n = 800, o = 16, i = Date.now; e.exports = r }, function (e, t, r) { function n(e) { return s(e) ? o(e, !0) : i(e) } var o = r(18), i = r(60), s = r(7); e.exports = n }, function (e, t) { function r(e, t) { for (var r = -1, n = Array(e) ; ++r < e;) n[r] = t(r); return n } e.exports = r }, function (e, t, r) { var n = r(53), o = r(1), i = Object.prototype, s = i.hasOwnProperty, a = i.propertyIsEnumerable, u = n(function () { return arguments }()) ? n : function (e) { return o(e) && s.call(e, "callee") && !a.call(e, "callee") }; e.exports = u }, function (e, t, r) { function n(e) { return i(e) && o(e) == s } var o = r(0), i = r(1), s = "[object Arguments]"; e.exports = n }, function (e, t, r) { (function (e) { var n = r(5), o = r(55), i = "object" == typeof t && t && !t.nodeType && t, s = i && "object" == typeof e && e && !e.nodeType && e, a = s && s.exports === i, u = a ? n.Buffer : void 0, l = u ? u.isBuffer : void 0, c = l || o; e.exports = c }).call(t, r(20)(e)) }, function (e, t) { function r() { return !1 } e.exports = r }, function (e, t, r) { var n = r(57), o = r(58), i = r(59), s = i && i.isTypedArray, a = s ? o(s) : n; e.exports = a }, function (e, t, r) { function n(e) { return s(e) && i(e.length) && !!a[o(e)] } var o = r(0), i = r(16), s = r(1), a = {}; a["[object Float32Array]"] = a["[object Float64Array]"] = a["[object Int8Array]"] = a["[object Int16Array]"] = a["[object Int32Array]"] = a["[object Uint8Array]"] = a["[object Uint8ClampedArray]"] = a["[object Uint16Array]"] = a["[object Uint32Array]"] = !0, a["[object Arguments]"] = a["[object Array]"] = a["[object ArrayBuffer]"] = a["[object Boolean]"] = a["[object DataView]"] = a["[object Date]"] = a["[object Error]"] = a["[object Function]"] = a["[object Map]"] = a["[object Number]"] = a["[object Object]"] = a["[object RegExp]"] = a["[object Set]"] = a["[object String]"] = a["[object WeakMap]"] = !1, e.exports = n }, function (e, t) { function r(e) { return function (t) { return e(t) } } e.exports = r }, function (e, t, r) { (function (e) { var n = r(11), o = "object" == typeof t && t && !t.nodeType && t, i = o && "object" == typeof e && e && !e.nodeType && e, s = i && i.exports === o, a = s && n.process, u = function () { try { return a && a.binding && a.binding("util") } catch (e) { } }(); e.exports = u }).call(t, r(20)(e)) }, function (e, t, r) { function n(e) { if (!o(e)) return s(e); var t = i(e), r = []; for (var n in e) ("constructor" != n || !t && u.call(e, n)) && r.push(n); return r } var o = r(2), i = r(21), s = r(61), a = Object.prototype, u = a.hasOwnProperty; e.exports = n }, function (e, t) { function r(e) { var t = []; if (null != e) for (var r in Object(e)) t.push(r); return t } e.exports = r }, function (e, t, r) { var n = r(14), o = r(12), i = r(22), s = o(function (e, t) { try { return n(e, void 0, t) } catch (e) { return i(e) ? e : new Error(e) } }); e.exports = s }, function (e, t, r) { function n(e) { if (!s(e) || o(e) != a) return !1; var t = i(e); if (null === t) return !0; var r = f.call(t, "constructor") && t.constructor; return "function" == typeof r && r instanceof r && c.call(r) == p } var o = r(0), i = r(64), s = r(1), a = "[object Object]", u = Function.prototype, l = Object.prototype, c = u.toString, f = l.hasOwnProperty, p = c.call(Object); e.exports = n }, function (e, t, r) { var n = r(23), o = n(Object.getPrototypeOf, Object); e.exports = o }, function (e, t, r) { function n(e, t) { return o(t, function (t) { return e[t] }) } var o = r(24); e.exports = n }, function (e, t, r) { function n(e, t, r, n) { return void 0 === e || o(e, i[r]) && !s.call(n, r) ? t : e } var o = r(6), i = Object.prototype, s = i.hasOwnProperty; e.exports = n }, function (e, t) { function r(e) { return "\\" + n[e] } var n = { "\\": "\\", "'": "'", "\n": "n", "\r": "r", "\u2028": "u2028", "\u2029": "u2029" }; e.exports = r }, function (e, t, r) { function n(e) { return s(e) ? o(e) : i(e) } var o = r(18), i = r(69), s = r(7); e.exports = n }, function (e, t, r) { function n(e) { if (!o(e)) return i(e); var t = []; for (var r in Object(e)) a.call(e, r) && "constructor" != r && t.push(r); return t } var o = r(21), i = r(70), s = Object.prototype, a = s.hasOwnProperty; e.exports = n }, function (e, t, r) { var n = r(23), o = n(Object.keys, Object); e.exports = o }, function (e, t, r) { var n = r(72), o = r(77), i = r(78), s = r(25), a = { escape: o, evaluate: i, interpolate: s, variable: "", imports: { _: { escape: n } } }; e.exports = a }, function (e, t, r) { function n(e) { return e = i(e), e && a.test(e) ? e.replace(s, o) : e } var o = r(73), i = r(26), s = /[&<>"']/g, a = RegExp(s.source); e.exports = n }, function (e, t, r) { var n = r(74), o = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }, i = n(o); e.exports = i }, function (e, t) { function r(e) { return function (t) { return null == e ? void 0 : e[t] } } e.exports = r }, function (e, t, r) { function n(e) { if ("string" == typeof e) return e; if (s(e)) return i(e, n) + ""; if (a(e)) return c ? c.call(e) : ""; var t = e + ""; return "0" == t && 1 / e == -u ? "-0" : t } var o = r(4), i = r(24), s = r(19), a = r(76), u = 1 / 0, l = o ? o.prototype : void 0, c = l ? l.toString : void 0; e.exports = n }, function (e, t, r) { function n(e) { return "symbol" == typeof e || i(e) && o(e) == s } var o = r(0), i = r(1), s = "[object Symbol]"; e.exports = n }, function (e, t) { var r = /<%-([\s\S]+?)%>/g; e.exports = r }, function (e, t) { var r = /<%([\s\S]+?)%>/g; e.exports = r }, function (e, t, r) { "use strict"; Object.defineProperty(t, "__esModule", { value: !0 }), t.default = { acres: { factor: 24711e-8, display: "acres", decimals: 2 }, feet: { factor: 3.2808, display: "feet", decimals: 0 }, kilometers: { factor: .001, display: "kilometers", decimals: 2 }, hectares: { factor: 1e-4, display: "hectares", decimals: 2 }, meters: { factor: 1, display: "meters", decimals: 0 }, miles: { factor: 3.2808 / 5280, display: "miles", decimals: 2 }, sqfeet: { factor: 10.7639, display: "sqfeet", decimals: 0 }, sqmeters: { factor: 1, display: "sqmeters", decimals: 0 }, sqmiles: { factor: 3.86102e-7, display: "sqmiles", decimals: 2 } } }, function (e, t, r) { "use strict"; function n(e) { return e && e.__esModule ? e : { default: e } } function o(e) { return e < 10 ? "0" + e.toString() : e.toString() } function i(e, t, r) { var n = Math.abs(e), i = Math.floor(n), s = Math.floor(60 * (n - i)), a = Math.round(3600 * (n - i - s / 60) * 100) / 100, u = n === e ? t : r; return o(i) + "&deg; " + o(s) + "' " + o(a) + '" ' + u } function s(e) { var t = e[e.length - 1], r = e.map(function (e) { return [e.lat, e.lng] }), n = L.polyline(r), o = L.polygon(r), s = 1e3 * (0, u.default)(n.toGeoJSON(), { units: "kilometers" }), a = (0, c.default)(o.toGeoJSON()); return { lastCoord: { dd: { x: t.lng, y: t.lat }, dms: { x: i(t.lng, "E", "W"), y: i(t.lat, "N", "S") } }, length: s, area: a } } Object.defineProperty(t, "__esModule", { value: !0 }), t.default = s; var a = r(81), u = n(a), l = r(84), c = n(l) }, function (e, t, r) { "use strict"; function n(e, t) { if (t = t || {}, !Object(s.d)(t)) throw new Error("options is invalid"); if (!e) throw new Error("geojson is required"); return Object(i.b)(e, function (e, r) { var n = r.geometry.coordinates; return e + Object(o.a)(n[0], n[1], t) }, 0) } Object.defineProperty(t, "__esModule", { value: !0 }); var o = r(82), i = r(27), s = r(3); t.default = n }, function (e, t, r) { "use strict"; function n(e, t, r) { if (r = r || {}, !Object(i.d)(r)) throw new Error("options is invalid"); var n = r.units, s = Object(o.a)(e), a = Object(o.a)(t), u = Object(i.a)(a[1] - s[1]), l = Object(i.a)(a[0] - s[0]), c = Object(i.a)(s[1]), f = Object(i.a)(a[1]), p = Math.pow(Math.sin(u / 2), 2) + Math.pow(Math.sin(l / 2), 2) * Math.cos(c) * Math.cos(f); return Object(i.g)(2 * Math.atan2(Math.sqrt(p), Math.sqrt(1 - p)), n) } var o = r(83), i = r(3); t.a = n }, function (e, t, r) { "use strict"; function n(e) { if (!e) throw new Error("coord is required"); if ("Feature" === e.type && null !== e.geometry && "Point" === e.geometry.type) return e.geometry.coordinates; if ("Point" === e.type) return e.coordinates; if (Array.isArray(e) && e.length >= 2 && void 0 === e[0].length && void 0 === e[1].length) return e; throw new Error("coord must be GeoJSON Point or an Array of numbers") } r.d(t, "a", function () { return n }); r(3) }, function (e, t, r) { "use strict"; function n(e) { return Object(u.a)(e, function (e, t) { return e + o(t) }, 0) } function o(e) { var t, r = 0; switch (e.type) { case "Polygon": return i(e.coordinates); case "MultiPolygon": for (t = 0; t < e.coordinates.length; t++) r += i(e.coordinates[t]); return r; case "Point": case "MultiPoint": case "LineString": case "MultiLineString": return 0; case "GeometryCollection": for (t = 0; t < e.geometries.length; t++) r += o(e.geometries[t]); return r } } function i(e) { var t = 0; if (e && e.length > 0) { t += Math.abs(s(e[0])); for (var r = 1; r < e.length; r++) t -= Math.abs(s(e[r])) } return t } function s(e) { var t, r, n, o, i, s, u, c = 0, f = e.length; if (f > 2) { for (u = 0; u < f; u++) u === f - 2 ? (o = f - 2, i = f - 1, s = 0) : u === f - 1 ? (o = f - 1, i = 0, s = 1) : (o = u, i = u + 1, s = u + 2), t = e[o], r = e[i], n = e[s], c += (a(n[0]) - a(t[0])) * Math.sin(a(r[1])); c = c * l * l / 2 } return c } function a(e) { return e * Math.PI / 180 } Object.defineProperty(t, "__esModule", { value: !0 }); var u = r(27), l = 6378137; t.default = n }, function (e, t, r) { "use strict"; function n(e, t) { return t || (t = document), t.querySelector(e) } function o(e, t) { return t || (t = document), Array.prototype.slice.call(t.querySelectorAll(e)) } function i(e) { if (e) return e.setAttribute("style", "display:none;"), e } function s(e) { if (e) return e.removeAttribute("style"), e } Object.defineProperty(t, "__esModule", { value: !0 }), t.selectOne = n, t.selectAll = o, t.hide = i, t.show = s }, function (e, t, r) { "use strict"; function n(e, t) { if (!(e instanceof t)) throw new TypeError("Cannot call a class as a function") } Object.defineProperty(t, "__esModule", { value: !0 }); var o = function () { function e(e, t) { for (var r = 0; r < t.length; r++) { var n = t[r]; n.enumerable = n.enumerable || !1, n.configurable = !0, "value" in n && (n.writable = !0), Object.defineProperty(e, n.key, n) } } return function (t, r, n) { return r && e(t.prototype, r), n && e(t, n), t } }(), i = { activeColor: "#ABE67E", completedColor: "#C8F2BE" }, s = function () { function e(t) { n(this, e), this._options = L.extend({}, i, this._options, t) } return o(e, [{ key: "getSymbol", value: function (e) { return { measureDrag: { clickable: !1, radius: 4, color: this._options.activeColor, weight: 2, opacity: .7, fillColor: this._options.activeColor, fillOpacity: .5, className: "layer-measuredrag" }, measureArea: { clickable: !1, stroke: !1, fillColor: this._options.activeColor, fillOpacity: .2, className: "layer-measurearea" }, measureBoundary: { clickable: !1, color: this._options.activeColor, weight: 2, opacity: .9, fill: !1, className: "layer-measureboundary" }, measureVertex: { clickable: !1, radius: 4, color: this._options.activeColor, weight: 2, opacity: 1, fillColor: this._options.activeColor, fillOpacity: .7, className: "layer-measurevertex" }, measureVertexActive: { clickable: !1, radius: 4, color: this._options.activeColor, weight: 2, opacity: 1, fillColor: this._options.activeColor, fillOpacity: 1, className: "layer-measurevertex active" }, resultArea: { clickable: !0, color: this._options.completedColor, weight: 2, opacity: .9, fillColor: this._options.completedColor, fillOpacity: .2, className: "layer-measure-resultarea" }, resultLine: { clickable: !0, color: this._options.completedColor, weight: 3, opacity: .9, fill: !1, className: "layer-measure-resultline" }, resultPoint: { clickable: !0, radius: 4, color: this._options.completedColor, weight: 2, opacity: 1, fillColor: this._options.completedColor, fillOpacity: .7, className: "layer-measure-resultpoint" } }[e] } }]), e }(); t.default = s }, function (e, t, r) { "use strict"; function n(e) { var t = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : 2, r = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : ".", n = arguments.length > 3 && void 0 !== arguments[3] ? arguments[3] : ",", o = e < 0 ? "-" : "", i = Math.abs(+e || 0), s = parseInt(i.toFixed(t), 10) + "", a = s.length > 3 ? s.length % 3 : 0; return [o, a ? s.substr(0, a) + n : "", s.substr(a).replace(/(\d{3})(?=\d)/g, "$1" + n), t ? "" + r + Math.abs(i - s).toFixed(t).slice(2) : ""].join("") } Object.defineProperty(t, "__esModule", { value: !0 }), t.numberFormat = n }, function (e, t, r) { "use strict"; function n(e) { return e && e.__esModule ? e : { default: e } } Object.defineProperty(t, "__esModule", { value: !0 }); var o = r(89); Object.defineProperty(t, "controlTemplate", { enumerable: !0, get: function () { return n(o).default } }); var i = r(90); Object.defineProperty(t, "resultsTemplate", { enumerable: !0, get: function () { return n(i).default } }); var s = r(91); Object.defineProperty(t, "pointPopupTemplate", { enumerable: !0, get: function () { return n(s).default } }); var a = r(92); Object.defineProperty(t, "linePopupTemplate", { enumerable: !0, get: function () { return n(a).default } }); var u = r(93); Object.defineProperty(t, "areaPopupTemplate", { enumerable: !0, get: function () { return n(u).default } }) }, function (e, t, r) { e.exports = '<a class="{{ model.className }}-toggle js-toggle" href=# title="Measure distances and areas">Measure</a> <div class="{{ model.className }}-interaction js-interaction"> <div class="js-startprompt startprompt"> <h3>Measure distances and areas</h3> <ul class=tasks> <a href=# class="js-start start">Create a new measurement</a> </ul> </div> <div class=js-measuringprompt> <h3>Measure distances and areas</h3> <p class=js-starthelp>Start creating a measurement by adding points to the map</p> <div class="js-results results"></div> <ul class="js-measuretasks tasks"> <li><a href=# class="js-cancel cancel">Cancel</a></li> <li><a href=# class="js-finish finish">Finish measurement</a></li> </ul> </div> </div> ' }, function (e, t, r) { e.exports = '<div class=group> <p class="lastpoint heading">Last point</p> <p>{{ model.lastCoord.dms.y }} <span class=coorddivider>/</span> {{ model.lastCoord.dms.x }}</p> <p>{{ numberFormat(model.lastCoord.dd.y, 6) }} <span class=coorddivider>/</span> {{ numberFormat(model.lastCoord.dd.x, 6) }}</p> </div> <% if (model.pointCount > 1) { %> <div class=group> <p><span class=heading>Path distance</span> {{ model.lengthDisplay }}</p> </div> <% } %> <% if (model.pointCount > 2) { %> <div class=group> <p><span class=heading>Area</span> {{ model.areaDisplay }}</p> </div> <% } %> ' }, function (e, t, r) { e.exports = '<h3>Point location</h3> <p>{{ model.lastCoord.dms.y }} <span class=coorddivider>/</span> {{ model.lastCoord.dms.x }}</p> <p>{{ numberFormat(model.lastCoord.dd.y, 6) }} <span class=coorddivider>/</span> {{ numberFormat(model.lastCoord.dd.x, 6) }}</p> <ul class=tasks> <li><a href=# class="js-zoomto zoomto">Center on this location</a></li> <li><a href=# class="js-deletemarkup deletemarkup">Delete</a></li> </ul> ' }, function (e, t, r) { e.exports = '<h3>Linear measurement</h3> <p>{{ model.lengthDisplay }}</p> <ul class=tasks> <li><a href=# class="js-zoomto zoomto">Center on this line</a></li> <li><a href=# class="js-deletemarkup deletemarkup">Delete</a></li> </ul> ' }, function (e, t, r) { e.exports = '<h3>Area measurement</h3> <p>{{ model.areaDisplay }}</p> <p>{{ model.lengthDisplay }} Perimeter</p> <ul class=tasks> <li><a href=# class="js-zoomto zoomto">Center on this area</a></li> <li><a href=# class="js-deletemarkup deletemarkup">Delete</a></li> </ul> ' }]);
-/*!
- * 
- *  leaflet.browser.print - v0.8.3 (https://github.com/Igor-Vladyka/leaflet.browser.print) 
- *  A leaflet plugin which allows users to print the map directly from the browser
- *  
- *  MIT (http://www.opensource.org/licenses/mit-license.php)
- *  (c) 2019  Igor Vladyka <igor.vladyka@gmail.com> (https://github.com/Igor-Vladyka/)
- * 
- */!function(t){var e={};function r(n){if(e[n])return e[n].exports;var o=e[n]={i:n,l:!1,exports:{}};return t[n].call(o.exports,o,o.exports,r),o.l=!0,o.exports}r.m=t,r.c=e,r.d=function(t,e,n){r.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:n})},r.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},r.t=function(t,e){if(1&e&&(t=r(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var n=Object.create(null);if(r.r(n),Object.defineProperty(n,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var o in t)r.d(n,o,function(e){return t[e]}.bind(null,o));return n},r.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return r.d(e,"a",e),e},r.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},r.p="",r(r.s=3)}([function(t,e){L.Control.BrowserPrint.Size={A:{Width:840,Height:1188},B:{Width:1e3,Height:1414}},L.Control.BrowserPrint.Mode=function(t,e,r,n,o){if(!t)throw"Print mode should be specified.";this.Mode=t,this.Title=e||t,this.PageSize=(r||"A4").toUpperCase(),this.PageSeries=this.PageSize[0],this.PageSeriesSize=parseInt(this.PageSize.substring(1)),this.Action=n||function(e){return e["_print"+t]},this.InvalidateBounds=o},L.Control.BrowserPrint.Mode.Landscape="Landscape",L.Control.BrowserPrint.Mode.Portrait="Portrait",L.Control.BrowserPrint.Mode.Auto="Auto",L.Control.BrowserPrint.Mode.Custom="Custom",L.Control.BrowserPrint.Mode.prototype.getPageMargin=function(){var t=this.getPaperSize();return Math.floor((t.Width+t.Height)/40)+"mm"},L.Control.BrowserPrint.Mode.prototype.getPaperSize=function(){var t=L.Control.BrowserPrint.Size[this.PageSeries],e=t.Width,r=t.Height,n=!1;return this.PageSeriesSize&&((n=this.PageSeriesSize%2==1)?(e/=this.PageSeriesSize-1||1,r/=this.PageSeriesSize+1):(e/=this.PageSeriesSize,r/=this.PageSeriesSize)),{Width:n?r:e,Height:n?e:r}},L.Control.BrowserPrint.Mode.prototype.getSize=function(){var t=this.getPaperSize(),e=parseInt(this.getPageMargin()),r=function(t){return e?t-2*e:t};return t.Width=Math.floor(r(t.Width))+"mm",t.Height=Math.floor(r(t.Height))+"mm",t},L.control.browserPrint.mode=function(t,e,r,n,o){return new L.Control.BrowserPrint.Mode(t,e,r,n,o)},L.control.browserPrint.mode.portrait=function(t,e,r){return L.control.browserPrint.mode(L.Control.BrowserPrint.Mode.Portrait,t,e,r,!1)},L.control.browserPrint.mode.landscape=function(t,e,r){return L.control.browserPrint.mode(L.Control.BrowserPrint.Mode.Landscape,t,e,r,!1)},L.control.browserPrint.mode.auto=function(t,e,r){return L.control.browserPrint.mode(L.Control.BrowserPrint.Mode.Auto,t,e,r,!0)},L.control.browserPrint.mode.custom=function(t,e,r){return L.control.browserPrint.mode(L.Control.BrowserPrint.Mode.Custom,t,e,r,!0)}},function(t,e){L.Control.BrowserPrint.Utils={_ignoreArray:[],_cloneFactoryArray:[],_cloneRendererArray:[],_knownRenderers:{},cloneOptions:function(t){var e={};for(var r in t){var n=t[r];n&&n.clone?e[r]=n.clone():n&&n.onAdd?e[r]=this.cloneLayer(n):e[r]=n}return e},cloneBasicOptionsWithoutLayers:function(t){var e={},r=Object.getOwnPropertyNames(t);if(r.length){for(var n=0;n<r.length;n++){var o=r[n];o&&"layers"!=o&&(e[o]=t[o])}return this.cloneOptions(e)}return e},cloneInnerLayers:function(t){var e=this,r=[];return t.eachLayer(function(t){var n=e.cloneLayer(t);n&&r.push(n)}),r},initialize:function(){this._knownRenderers={},this.registerRenderer(L.SVG,"L.SVG"),this.registerRenderer(L.Canvas,"L.Canvas"),this.registerLayer(L.MarkerClusterGroup,"L.MarkerClusterGroup",function(t,e){var r=L.markerClusterGroup(t.options);return r.addLayers(e.cloneInnerLayers(t)),r}),this.registerLayer(L.TileLayer.WMS,"L.TileLayer.WMS",function(t,e){return L.tileLayer.wms(t._url,e.cloneOptions(t.options))}),this.registerLayer(L.TileLayer,"L.TileLayer",function(t,e){return L.tileLayer(t._url,e.cloneOptions(t.options))}),this.registerLayer(L.GridLayer,"L.GridLayer",function(t,e){return L.gridLayer(e.cloneOptions(t.options))}),this.registerLayer(L.ImageOverlay,"L.ImageOverlay",function(t,e){return L.imageOverlay(t._url,t._bounds,e.cloneOptions(t.options))}),this.registerLayer(L.Marker,"L.Marker",function(t,e){return L.marker(t.getLatLng(),e.cloneOptions(t.options))}),this.registerLayer(L.Popup,"L.Popup",function(t,e){return L.popup(e.cloneOptions(t.options)).setLatLng(t.getLatLng()).setContent(t.getContent())}),this.registerLayer(L.Circle,"L.Circle",function(t,e){return L.circle(t.getLatLng(),t.getRadius(),e.cloneOptions(t.options))}),this.registerLayer(L.CircleMarker,"L.CircleMarker",function(t,e){return L.circleMarker(t.getLatLng(),e.cloneOptions(t.options))}),this.registerLayer(L.Rectangle,"L.Rectangle",function(t,e){return L.rectangle(t.getBounds(),e.cloneOptions(t.options))}),this.registerLayer(L.Polygon,"L.Polygon",function(t,e){return L.polygon(t.getLatLngs(),e.cloneOptions(t.options))}),this.registerLayer(L.MultiPolyline,"L.MultiPolyline",function(t,e){return L.polyline(t.getLatLngs(),e.cloneOptions(t.options))}),this.registerLayer(L.MultiPolygon,"L.MultiPolygon",function(t,e){return L.multiPolygon(t.getLatLngs(),e.cloneOptions(t.options))}),this.registerLayer(L.Polyline,"L.Polyline",function(t,e){return L.polyline(t.getLatLngs(),e.cloneOptions(t.options))}),this.registerLayer(L.GeoJSON,"L.GeoJSON",function(t,e){return L.geoJson(t.toGeoJSON(),e.cloneOptions(t.options))}),this.registerIgnoreLayer(L.FeatureGroup,"L.FeatureGroup"),this.registerIgnoreLayer(L.LayerGroup,"L.LayerGroup"),this.registerLayer(L.Tooltip,"L.Tooltip",function(){return null})},_register:function(t,e,r,n){e&&!t.filter(function(t){return t.identifier===r}).length&&t.push({type:e,identifier:r,builder:n||function(t){return new e(t.options)}})},registerLayer:function(t,e,r){this._register(this._cloneFactoryArray,t,e,r)},registerRenderer:function(t,e,r){this._register(this._cloneRendererArray,t,e,r)},registerIgnoreLayer:function(t,e){this._register(this._ignoreArray,t,e)},cloneLayer:function(t){if(!t)return null;var e=this.__getRenderer(t);if(e)return e;var r=this.__getFactoryObject(t);return r&&(r=r.builder(t,this)),r},getType:function(t){if(!t)return null;var e=this.__getFactoryObject(t);return e&&(e=e.identifier),e},__getRenderer:function(t){var e=this._knownRenderers[t._leaflet_id];if(!e){for(var r=0;r<this._cloneRendererArray.length;r++){var n=this._cloneRendererArray[r];if(t instanceof n.type){this._knownRenderers[t._leaflet_id]=n.builder(t.options);break}}e=this._knownRenderers[t._leaflet_id]}return e},__getFactoryObject:function(t){for(var e=0;e<this._ignoreArray.length;e++){var r=this._ignoreArray[e];if(r.type&&t instanceof r.type)return null}for(e=0;e<this._cloneFactoryArray.length;e++){if((n=this._cloneFactoryArray[e]).type&&t instanceof n.type)return n}for(e=0;e<this._cloneRendererArray.length;e++){var n;if((n=this._cloneRendererArray[e]).type&&t instanceof n.type)return null}return this.__unknownLayer__(),null},__unknownLayer__:function(){console.warn("Unknown layer, cannot clone this layer. Leaflet-version: "+L.version),console.info('Please use "L.Control.BrowserPrint.Utils.registerLayer(/*layerFunction*/, "layerIdentifierString", constructorFunction)" to register new layers.'),console.info('WMS Layer registration Example: L.Control.BrowserPrint.Utils.registerLayer(L.TileLayer.WMS, "L.TileLayer.WMS", function(layer, utils) { return L.tileLayer.wms(layer._url, layer.options); });'),console.info("For additional information please refer to documentation on: https://github.com/Igor-Vladyka/leaflet.browser.print."),console.info("-------------------------------------------------------------------------------------------------------------------")}}},function(t,e){L.Control.BrowserPrint=L.Control.extend({options:{title:"Print map",documentTitle:"",position:"topleft",printLayer:null,printModes:["Portrait","Landscape","Auto","Custom"],closePopupsOnPrint:!0,contentSelector:"[leaflet-browser-print-content]",pagesSelector:"[leaflet-browser-print-pages]",manualMode:!1},onAdd:function(t){var e=L.DomUtil.create("div","leaflet-control-browser-print leaflet-bar leaflet-control");return L.DomEvent.disableClickPropagation(e),this._appendControlStyles(e),this.options.printModes.length>1?(L.DomEvent.addListener(e,"mouseover",this._displayPageSizeButtons,this),L.DomEvent.addListener(e,"mouseout",this._hidePageSizeButtons,this)):e.style.cursor="pointer",this.options.position.indexOf("left")>0?(this._createIcon(e),this._createMenu(e)):(this._createMenu(e),this._createIcon(e)),setTimeout(function(){e.className+=parseInt(L.version)?" v1":" v0-7"},10),t.printControl=this,e},_createIcon:function(t){return this.__link__=L.DomUtil.create("a","",t),this.__link__.className="leaflet-browser-print",this.options.title&&(this.__link__.title=this.options.title),this.__link__},_createMenu:function(t){for(var e=[],r=0;r<this.options.printModes.length;r++){var n=this.options.printModes[r];if(n.length){var o=n[0].toUpperCase()+n.substring(1).toLowerCase();n=L.control.browserPrint.mode[n.toLowerCase()](this._getDefaultTitle(o))}else if(!(n instanceof L.Control.BrowserPrint.Mode))throw"Invalid Print Mode. Can't construct logic to print current map.";1==this.options.printModes.length?n.Element=t:(n.Element=L.DomUtil.create("li","browser-print-mode",L.DomUtil.create("ul","browser-print-holder",t)),n.Element.innerHTML=n.Title),L.DomEvent.addListener(n.Element,"click",n.Action(this,n),this),e.push(n)}this.options.printModes=e},_getDefaultTitle:function(t){return this.options.printModesNames&&this.options.printModesNames[t]||t},_displayPageSizeButtons:function(){this.options.position.indexOf("left")>0?(this.__link__.style.borderTopRightRadius="0px",this.__link__.style.borderBottomRightRadius="0px"):(this.__link__.style.borderTopLeftRadius="0px",this.__link__.style.borderBottomLeftRadius="0px"),this.options.printModes.forEach(function(t){t.Element.style.display="inline-block"})},_hidePageSizeButtons:function(){this.options.position.indexOf("left")>0?(this.__link__.style.borderTopRightRadius="",this.__link__.style.borderBottomRightRadius=""):(this.__link__.style.borderTopLeftRadius="",this.__link__.style.borderBottomLeftRadius=""),this.options.printModes.forEach(function(t){t.Element.style.display=""})},_getMode:function(t,e,r){var n=this.options.printModes.filter(function(e){return e.Mode.toLowerCase()==t.toLowerCase()})[0];if(!n){var o=this.options.printModes.filter(function(t){return t.Mode==r})[0];n=L.control.browserPrint.mode[t.toLowerCase()](o.Title,o.PageSize)}return new L.control.browserPrint.mode(n.Mode,n.Title,n.PageSize,n.Action,e||n.InvalidateBounds)},_printLandscape:function(){this._addPrintClassToContainer(this._map,"leaflet-browser-print--landscape");var t=L.Control.BrowserPrint.Mode.Landscape;this._print(this._getMode(t,!1,t),t)},_printPortrait:function(){this._addPrintClassToContainer(this._map,"leaflet-browser-print--portrait");var t=L.Control.BrowserPrint.Mode.Portrait;this._print(this._getMode(t,!1,t),t)},_printAuto:function(){this._addPrintClassToContainer(this._map,"leaflet-browser-print--auto");var t=this._getBoundsForAllVisualLayers(),e=this._getPageSizeFromBounds(t);this._print(this._getMode(e,!0,L.Control.BrowserPrint.Mode.Auto),e,t)},_printCustom:function(){this._addPrintClassToContainer(this._map,"leaflet-browser-print--custom"),this._map.on("mousedown",this._startAutoPoligon,this)},_addPrintClassToContainer:function(t,e){var r=t.getContainer();-1===r.className.indexOf(e)&&(r.className+=" "+e)},_removePrintClassFromContainer:function(t,e){var r=t.getContainer();r.className&&r.className.indexOf(e)>-1&&(r.className=r.className.replace(" "+e,""))},_startAutoPoligon:function(t){t.originalEvent.preventDefault(),t.originalEvent.stopPropagation(),this._map.dragging.disable(),this.options.custom={start:t.latlng},this._map.off("mousedown",this._startAutoPoligon,this),this._map.on("mousemove",this._moveAutoPoligon,this),this._map.on("mouseup",this._endAutoPoligon,this)},_moveAutoPoligon:function(t){this.options.custom&&(t.originalEvent.preventDefault(),t.originalEvent.stopPropagation(),this.options.custom.rectangle?this.options.custom.rectangle.setBounds(L.latLngBounds(this.options.custom.start,t.latlng)):(this.options.custom.rectangle=L.rectangle([this.options.custom.start,t.latlng],{color:"gray",dashArray:"5, 10"}),this.options.custom.rectangle.addTo(this._map)))},_endAutoPoligon:function(t){if(t.originalEvent.preventDefault(),t.originalEvent.stopPropagation(),this._map.off("mousemove",this._moveAutoPoligon,this),this._map.off("mouseup",this._endAutoPoligon,this),this._map.dragging.enable(),this.options.custom&&this.options.custom.rectangle){var e=this.options.custom.rectangle.getBounds();this._map.removeLayer(this.options.custom.rectangle),this.options.custom=void 0;var r=this._getPageSizeFromBounds(e);this._print(this._getMode(r,!0,L.Control.BrowserPrint.Mode.Custom),r,e)}else this._clearPrint()},_getPageSizeFromBounds:function(t){return Math.abs(t.getNorth()-t.getSouth())>Math.abs(t.getEast()-t.getWest())?"Portrait":"Landscape"},_setupPrintPagesWidth:function(t,e,r){t.style.width="Landscape"===r?e.Height:e.Width},_setupPrintMapHeight:function(t,e,r){t.style.height="Landscape"===r?e.Width:e.Height},cancel:function(t){this.cancelNextPrinting=t},print:function(t,e){"Landscape"!=t&&"Portrait"!=t||this._print(this._getMode(t,!!e),t,e)},_print:function(t,e,r){L.Control.BrowserPrint.Utils.initialize();var n=this,o=this._map.getContainer(),i={bounds:r||this._map.getBounds(),width:o.style.width,height:o.style.height,documentTitle:document.title,printLayer:L.Control.BrowserPrint.Utils.cloneLayer(this.options.printLayer),panes:[]},s=this._map.getPanes();for(var a in s)i.panes.push({name:a,container:void 0});if(i.printObjects=this._getPrintObjects(i.printLayer),this._map.fire(L.Control.BrowserPrint.Event.PrePrint,{printLayer:i.printLayer,printObjects:i.printObjects,pageOrientation:e,printMode:t.Mode,pageBounds:i.bounds}),this.cancelNextPrinting)delete this.cancelNextPrinting;else{var l=this._addPrintMapOverlay(t.PageSize,t.getPageMargin(),t.getSize(),e,i);this.options.documentTitle&&(document.title=this.options.documentTitle),this._map.fire(L.Control.BrowserPrint.Event.PrintStart,{printLayer:i.printLayer,printMap:l.map,printObjects:l.objects}),t.InvalidateBounds?(l.map.fitBounds(i.bounds),l.map.invalidateSize({reset:!0,animate:!1,pan:!1})):l.map.setView(this._map.getCenter(),this._map.getZoom());var p=setInterval(function(){n._isTilesLoading(l.map)||(clearInterval(p),n.options.manualMode?n._setupManualPrintButton(l.map,i,l.objects):n._completePrinting(l.map,i,l.objects))},50)}},_completePrinting:function(t,e,r){var n=this;setTimeout(function(){n._map.fire(L.Control.BrowserPrint.Event.Print,{printLayer:e.printLayer,printMap:t,printObjects:r});var o=window.print();o?Promise.all([o]).then(function(){n._printEnd(e),n._map.fire(L.Control.BrowserPrint.Event.PrintEnd,{printLayer:e.printLayer,printMap:t,printObjects:r})}):(n._printEnd(e),n._map.fire(L.Control.BrowserPrint.Event.PrintEnd,{printLayer:e.printLayer,printMap:t,printObjects:r}))},1e3)},_getBoundsForAllVisualLayers:function(){var t=null;for(var e in this._map._layers){var r=this._map._layers[e];r._url||r._mutant||(t?r.getBounds?t.extend(r.getBounds()):r.getLatLng&&t.extend(r.getLatLng()):r.getBounds?t=r.getBounds():r.getLatLng&&(t=L.latLngBounds(r.getLatLng(),r.getLatLng())))}return t||(t=this._map.getBounds()),t},_clearPrint:function(){this._removePrintClassFromContainer(this._map,"leaflet-browser-print--landscape"),this._removePrintClassFromContainer(this._map,"leaflet-browser-print--portrait"),this._removePrintClassFromContainer(this._map,"leaflet-browser-print--auto"),this._removePrintClassFromContainer(this._map,"leaflet-browser-print--custom")},_printEnd:function(t){this._clearPrint(),document.body.removeChild(this.__overlay__),this.__overlay__=null,document.body.className=document.body.className.replace(" leaflet--printing",""),this.options.documentTitle&&(document.title=t.documentTitle),this._map.invalidateSize({reset:!0,animate:!1,pan:!1})},_getPrintObjects:function(t){var e={};for(var r in this._map._layers){var n=this._map._layers[r];if(!t||!n._url||n instanceof L.TileLayer.WMS){var o=L.Control.BrowserPrint.Utils.getType(n);o&&(e[o]||(e[o]=[]),e[o].push(n))}}return e},_addPrintCss:function(t,e,r){var n=document.createElement("style");switch(n.className="leaflet-browser-print-css",n.setAttribute("type","text/css"),n.innerHTML=" @media print { .leaflet-popup-content-wrapper, .leaflet-popup-tip { box-shadow: none; }",n.innerHTML+=" .leaflet-browser-print--manualMode-button { display: none; }",n.innerHTML+=" * { -webkit-print-color-adjust: exact!important; printer-colors: exact!important; color-adjust: exact!important; }",e&&(n.innerHTML+=" @page { margin: "+e+"; }"),n.innerHTML+=" @page :first { page-break-after: always; }",r){case"Landscape":n.innerText+=" @page { size : "+t+" landscape; }";break;default:case"Portrait":n.innerText+=" @page { size : "+t+" portrait; }"}return n},_appendControlStyles:function(t){var e=document.createElement("style");e.setAttribute("type","text/css"),e.innerHTML+=" .leaflet-control-browser-print { display: flex; } .leaflet-control-browser-print a { background: #fff url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3gcCCi8Vjp+aNAAAAGhJREFUOMvFksENgDAMA68RC7BBN+Cf/ZU33QAmYAT6BolAGxB+RrrIsg1BpfNBVXcPMLMDI/ytpKozMHWwK7BJJ7yYWQbGdBea9wTIkRDzKy0MT7r2NiJACRgotCzxykFI34QY2Ea7KmtxGJ+uX4wfAAAAAElFTkSuQmCC') no-repeat 5px; background-size: 16px 16px; display: block; border-radius: 2px; }",e.innerHTML+=" .v0-7.leaflet-control-browser-print a.leaflet-browser-print { width: 26px; height: 26px; } .v1.leaflet-control-browser-print a.leaflet-browser-print { background-position-x: 7px; }",e.innerHTML+=" .browser-print-holder { margin: 0px; padding: 0px; list-style: none; white-space: nowrap; } .browser-print-holder-left li:last-child { border-top-right-radius: 2px; border-bottom-right-radius: 2px; } .browser-print-holder-right li:first-child { border-top-left-radius: 2px; border-bottom-left-radius: 2px; }",e.innerHTML+=" .browser-print-mode { display: none; background-color: #919187; color: #FFF; font: 11px/19px 'Helvetica Neue', Arial, Helvetica, sans-serif; text-decoration: none; padding: 4px 10px; text-align: center; } .v1 .browser-print-mode { padding: 6px 10px; } .browser-print-mode:hover { background-color: #757570; cursor: pointer; }",e.innerHTML+=" .leaflet-browser-print--custom, .leaflet-browser-print--custom path { cursor: crosshair!important; }",e.innerHTML+=" .leaflet-print-overlay { width: 100%; height:auto; min-height: 100%; position: absolute; top: 0; background-color: white!important; left: 0; z-index: 1001; display: block!important; } ",e.innerHTML+=" .leaflet--printing { height:auto; min-height: 100%; margin: 0px!important; padding: 0px!important; } body.leaflet--printing > * { display: none; box-sizing: border-box; }",e.innerHTML+=" .grid-print-container { grid-template: 1fr / 1fr; box-sizing: border-box; } .grid-map-print { grid-row: 1; grid-column: 1; } body.leaflet--printing .grid-print-container [leaflet-browser-print-content]:not(style) { display: unset!important; }",e.innerHTML+=" .pages-print-container { box-sizing: border-box; }",t.appendChild(e)},_setupManualPrintButton:function(t,e,r){var n=document.createElement("button");n.className="leaflet-browser-print--manualMode-button",n.innerHTML="Print",n.style.position="absolute",n.style.top="20px",n.style.right="20px",this.__overlay__.appendChild(n);var o=this;L.DomEvent.addListener(n,"click",function(){o._completePrinting(t,e,r)})},_addPrintMapOverlay:function(t,e,r,n,o){this.__overlay__=document.createElement("div"),this.__overlay__.className=this._map.getContainer().className+" leaflet-print-overlay",document.body.appendChild(this.__overlay__),this.__overlay__.appendChild(this._addPrintCss(t,e,n));var i=document.createElement("div");if(i.className="grid-print-container",i.style.width="100%",i.style.display="grid",this._setupPrintMapHeight(i,r,n),this.options.contentSelector){var s=document.querySelectorAll(this.options.contentSelector);if(s&&s.length)for(var a=0;a<s.length;a++){var l=s[a].cloneNode(!0);i.appendChild(l)}}if(this.options.pagesSelector&&document.querySelectorAll(this.options.pagesSelector).length){var p=document.createElement("div");p.className="pages-print-container",p.style.margin="0!important",this._setupPrintPagesWidth(p,r,n),this.__overlay__.appendChild(p),p.appendChild(i);var c=document.querySelectorAll(this.options.pagesSelector);if(c&&c.length)for(a=0;a<c.length;a++){var u=c[a].cloneNode(!0);p.appendChild(u)}}else this._setupPrintPagesWidth(i,r,n),this.__overlay__.appendChild(i);var d=document.createElement("div");d.id=this._map.getContainer().id+"-print",d.className="grid-map-print",d.style.width="100%",d.style.height="100%",i.appendChild(d),document.body.className+=" leaflet--printing";var h=L.Control.BrowserPrint.Utils.cloneBasicOptionsWithoutLayers(this._map.options);return h.maxZoom=this._map.getMaxZoom(),this._setupPrintMap(d.id,h,o.printLayer,o.printObjects,o.panes)},_setupPrintMap:function(t,e,r,n,o){e.zoomControl=!1;var i=L.map(t,e);for(var s in r&&r.addTo(i),o.forEach(function(t){i.createPane(t.name,t.container)}),n){var a=this.options.closePopupsOnPrint;n[s]=n[s].map(function(t){var e=L.Control.BrowserPrint.Utils.cloneLayer(t);if(e){if(t instanceof L.Popup?(t.isOpen||(t.isOpen=function(){return this._isOpen}),t.isOpen()&&!a&&e.openOn(i)):e.addTo(i),t instanceof L.Layer){var r=t.getTooltip();r&&(e.bindTooltip(r.getContent(),r.options),t.isTooltipOpen()&&e.openTooltip(r.getLatLng()))}return e}})}return{map:i,objects:n}},_isTilesLoading:function(t){return parseFloat(L.version)>1?this._getLoadingLayers(t):t._tilesToLoad||t._tileLayersToLoad},_getLoadingLayers:function(t){for(var e in t._layers){var r=t._layers[e];if((r._url||r._mutant)&&r._loading)return!0}return!1}}),L.Control.BrowserPrint.Event={PrePrint:"browser-pre-print",PrintStart:"browser-print-start",Print:"browser-print",PrintEnd:"browser-print-end"},L.control.browserPrint=function(t){if(t&&t.printModes||((t=t||{}).printModes=[L.control.browserPrint.mode.portrait(),L.control.browserPrint.mode.landscape(),L.control.browserPrint.mode.auto(),L.control.browserPrint.mode.custom()]),t&&t.printModes&&(!t.printModes.filter||!t.printModes.length))throw"Please specify valid print modes for Print action. Example: printModes: [L.control.browserPrint.mode.portrait(), L.control.browserPrint.mode.auto('Automatico'), 'Custom']";return t.printModesNames&&console.warn("'printModesNames' option is obsolete. Please use 'L.control.browserPrint.mode.*(/*Title*/)' shortcut instead. Please check latest release and documentation."),new L.Control.BrowserPrint(t)}},function(t,e,r){r(2),r(1),t.exports=r(0)}]);
-(function (global) {
-    'use strict';
+var resizeSvg =
+  '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 24 24"><path d="M13,21H21V13H19V17.59L6.41,5H11V3H3V11H5V6.41L17.59,19H13V21Z" /></svg>';
+var grabberSvg =
+  '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 24 24"><path d="M13,11H18L16.5,9.5L17.92,8.08L21.84,12L17.92,15.92L16.5,14.5L18,13H13V18L14.5,16.5L15.92,17.92L12,21.84L8.08,17.92L9.5,16.5L11,18V13H6L7.5,14.5L6.08,15.92L2.16,12L6.08,8.08L7.5,9.5L6,11H11V6L9.5,7.5L8.08,6.08L12,2.16L15.92,6.08L14.5,7.5L13,6V11Z" /></svg>';
+var lockSvg =
+  '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 24 24"><path d="M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V10A2,2 0 0,1 6,8H15V6A3,3 0 0,0 12,3A3,3 0 0,0 9,6H7A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,17A2,2 0 0,0 14,15A2,2 0 0,0 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17Z" /></svg>';
+var unlockSvg =
+  '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 24 24"><path d="M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z" /></svg>';
+var closeSvg =
+  '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="20" height="20" viewBox="0 0 24 24"><path d="M20 6.91L17.09 4L12 9.09L6.91 4L4 6.91L9.09 12L4 17.09L6.91 20L12 14.91L17.09 20L20 17.09L14.91 12L20 6.91Z" /></svg>';
 
-    var util = newUtil();
-    var inliner = newInliner();
-    var fontFaces = newFontFaces();
-    var images = newImages();
+L.Control.Dialog = L.Control.extend({
+  options: {
+    size: [300, 300],
+    minSize: [100, 100],
+    maxSize: [600, 500],
+    anchor: [250, 250],
+    position: "topleft",
+    initOpen: true,
+  },
 
-    // Default impl options
-    var defaultOptions = {
-        // Default is to fail on error, no placeholder
-        imagePlaceholder: undefined,
-        // Default cache bust is false, it will use the cache
-        cacheBust: false
-    };
+  initialize: function (options) {
+    this.options = JSON.parse(JSON.stringify(this.options));
+    L.setOptions(this, options);
 
-    var domtoimage = {
-        toSvg: toSvg,
-        toPng: toPng,
-        toJpeg: toJpeg,
-        toBlob: toBlob,
-        toPixelData: toPixelData,
-        impl: {
-            fontFaces: fontFaces,
-            images: images,
-            util: util,
-            inliner: inliner,
-            options: {}
-        }
-    };
+    this._attributions = {};
+  },
 
-    if (typeof module !== 'undefined')
-        module.exports = domtoimage;
-    else
-        global.domtoimage = domtoimage;
+  onAdd: function (map) {
+    this._initLayout();
+    this._map = map;
 
+    this.update();
 
-    /**
-     * @param {Node} node - The DOM Node object to render
-     * @param {Object} options - Rendering options
-     * @param {Function} options.filter - Should return true if passed node should be included in the output
-     *          (excluding node means excluding it's children as well). Not called on the root node.
-     * @param {String} options.bgcolor - color for the background, any valid CSS color value.
-     * @param {Number} options.width - width to be applied to node before rendering.
-     * @param {Number} options.height - height to be applied to node before rendering.
-     * @param {Object} options.style - an object whose properties to be copied to node's style before rendering.
-     * @param {Number} options.quality - a Number between 0 and 1 indicating image quality (applicable to JPEG only),
-                defaults to 1.0.
-     * @param {String} options.imagePlaceholder - dataURL to use as a placeholder for failed images, default behaviour is to fail fast on images we can't fetch
-     * @param {Boolean} options.cacheBust - set to true to cache bust by appending the time to the request url
-     * @return {Promise} - A promise that is fulfilled with a SVG image data URL
-     * */
-    function toSvg(node, options) {
-        options = options || {};
-        copyOptions(options);
-        return Promise.resolve(node)
-            .then(function (node) {
-                return cloneNode(node, options.filter, true);
-            })
-            .then(embedFonts)
-            .then(inlineImages)
-            .then(applyOptions)
-            .then(function (clone) {
-                return makeSvgDataUri(clone,
-                    options.width || util.width(node),
-                    options.height || util.height(node)
-                );
-            });
-
-        function applyOptions(clone) {
-            if (options.bgcolor) clone.style.backgroundColor = options.bgcolor;
-
-            if (options.width) clone.style.width = options.width + 'px';
-            if (options.height) clone.style.height = options.height + 'px';
-
-            if (options.style)
-                Object.keys(options.style).forEach(function (property) {
-                    clone.style[property] = options.style[property];
-                });
-
-            return clone;
-        }
+    if (!this.options.initOpen) {
+      this.close();
     }
 
-    /**
-     * @param {Node} node - The DOM Node object to render
-     * @param {Object} options - Rendering options, @see {@link toSvg}
-     * @return {Promise} - A promise that is fulfilled with a Uint8Array containing RGBA pixel data.
-     * */
-    function toPixelData(node, options) {
-        return draw(node, options || {})
-            .then(function (canvas) {
-                return canvas.getContext('2d').getImageData(
-                    0,
-                    0,
-                    util.width(node),
-                    util.height(node)
-                ).data;
-            });
+    return this._container;
+  },
+
+  open: function () {
+    if (!this._map) {
+      return;
+    }
+    this._container.style.visibility = "";
+
+    this._map.fire("dialog:opened", this);
+
+    return this;
+  },
+
+  close: function () {
+    this._container.style.visibility = "hidden";
+
+    this._map.fire("dialog:closed", this);
+    return this;
+  },
+
+  destroy: function () {
+    if (!this._map) {
+      return this;
     }
 
-    /**
-     * @param {Node} node - The DOM Node object to render
-     * @param {Object} options - Rendering options, @see {@link toSvg}
-     * @return {Promise} - A promise that is fulfilled with a PNG image data URL
-     * */
-    function toPng(node, options) {
-        return draw(node, options || {})
-            .then(function (canvas) {
-                return canvas.toDataURL();
-            });
+    this._map.fire("dialog:destroyed", this);
+    this.remove();
+
+    if (this.onRemove) {
+      this.onRemove(this._map);
     }
 
-    /**
-     * @param {Node} node - The DOM Node object to render
-     * @param {Object} options - Rendering options, @see {@link toSvg}
-     * @return {Promise} - A promise that is fulfilled with a JPEG image data URL
-     * */
-    function toJpeg(node, options) {
-        options = options || {};
-        return draw(node, options)
-            .then(function (canvas) {
-                return canvas.toDataURL('image/jpeg', options.quality || 1.0);
-            });
+    return this;
+  },
+
+  setLocation: function (location) {
+    location = location || [250, 250];
+
+    this.options.anchor[0] = 0;
+    this.options.anchor[1] = 0;
+    this._oldMousePos.x = 0;
+    this._oldMousePos.y = 0;
+
+    this._move(location[1], location[0]);
+
+    return this;
+  },
+
+  setSize: function (size) {
+    size = size || [300, 300];
+
+    this.options.size[0] = 0;
+    this.options.size[1] = 0;
+    this._oldMousePos.x = 0;
+    this._oldMousePos.y = 0;
+
+    this._resize(size[0], size[1]);
+
+    return this;
+  },
+
+  lock: function () {
+    this._resizerNode.style.visibility = "hidden";
+    this._closeNode.style.visibility = "hidden";
+    //this._toolNode.style.visibility = "hidden";
+    this.myToolNode.removeChild(this.grabberIcon);
+    this.myToolNode.removeChild(this.lockIcon);
+    this.myToolNode.appendChild(this.unlockIcon);
+    /*     this.grabberIcon.style.visibility = "hidden";
+    this.lockIcon.style.visibility = "hidden"; 
+    this.unlockIcon.style.visibility = "";*/
+
+    this._map.fire("dialog:locked", this);
+    return this;
+  },
+
+  unlock: function () {
+    this._resizerNode.style.visibility = "";
+    //this._toolNode.style.visibility = "";
+    this._closeNode.style.visibility = "";
+    this.myToolNode.appendChild(this.grabberIcon);
+    this.myToolNode.appendChild(this.lockIcon);
+    this.myToolNode.removeChild(this.unlockIcon);
+    /*     this.grabberIcon.style.visibility = "";
+    this.lockIcon.style.visibility = "";
+    this.unlockIcon.style.visibility = "hidden"; */
+
+    this._map.fire("dialog:unlocked", this);
+    return this;
+  },
+
+  freeze: function () {
+    this._resizerNode.style.visibility = "hidden";
+    //this._toolNode.style.visibility = "hidden";
+
+    this._map.fire("dialog:frozen", this);
+    return this;
+  },
+
+  unfreeze: function () {
+    this._resizerNode.style.visibility = "";
+    //this._toolNode.style.visibility = "";
+
+    this._map.fire("dialog:unfrozen", this);
+    return this;
+  },
+
+  hideClose: function () {
+    this._closeNode.style.visibility = "hidden";
+
+    this._map.fire("dialog:closehidden", this);
+    return this;
+  },
+
+  showClose: function () {
+    this._closeNode.style.visibility = "";
+
+    this._map.fire("dialog:closeshown", this);
+    return this;
+  },
+
+  hideResize: function () {
+    this._resizerNode.style.visibility = "hidden";
+
+    this._map.fire("dialog:resizehidden", this);
+    return this;
+  },
+
+  showResize: function () {
+    this._resizerNode.style.visibility = "";
+
+    this._map.fire("dialog:resizeshown", this);
+    return this;
+  },
+
+  setContent: function (content) {
+    this._content = content;
+    this.update();
+    return this;
+  },
+
+  getContent: function () {
+    return this._content;
+  },
+
+  getElement: function () {
+    return this._container;
+  },
+
+  update: function () {
+    if (!this._map) {
+      return;
     }
 
-    /**
-     * @param {Node} node - The DOM Node object to render
-     * @param {Object} options - Rendering options, @see {@link toSvg}
-     * @return {Promise} - A promise that is fulfilled with a PNG image blob
-     * */
-    function toBlob(node, options) {
-        return draw(node, options || {})
-            .then(util.canvasToBlob);
+    this._container.style.visibility = "hidden";
+
+    this._updateContent();
+    this._updateLayout();
+
+    this._container.style.visibility = "";
+    this._map.fire("dialog:updated", this);
+  },
+
+  _initLayout: function () {
+    var className = "leaflet-control-dialog",
+      container = (this._container = L.DomUtil.create("div", className));
+
+    container.style.width = this.options.size[0] + "px";
+    container.style.height = this.options.size[1] + "px";
+
+    container.style.top = this.options.anchor[0] + "px";
+    container.style.left = this.options.anchor[1] + "px";
+
+    var stop = L.DomEvent.stopPropagation;
+    L.DomEvent.on(container, "click", stop)
+      .on(container, "mousedown", stop)
+      .on(container, "touchstart", stop)
+      .on(container, "dblclick", stop)
+      .on(container, "mousewheel", stop)
+      .on(container, "contextmenu", stop)
+      .on(container, "MozMousePixelScroll", stop);
+
+    var innerContainer = (this._innerContainer = L.DomUtil.create(
+      "div",
+      className + "-inner"
+    ));
+
+    this.myToolNode = this._toolNode = L.DomUtil.create(
+      "div",
+      className + "-grabber"
+    );
+
+    this.grabberIcon = L.DomUtil.create("i");
+    this.grabberIcon.innerHTML = grabberSvg;
+    L.DomEvent.on(this.grabberIcon, "mousedown", this._handleMoveStart, this);
+
+    this.lockIcon = L.DomUtil.create("i");
+    this.lockIcon.innerHTML = lockSvg;
+    L.DomEvent.on(this.lockIcon, "click", this.lock, this);
+
+    this.unlockIcon = L.DomUtil.create("i");
+    this.unlockIcon.innerHTML = unlockSvg;
+    L.DomEvent.on(this.unlockIcon, "click", this.unlock, this);
+
+    this.myToolNode.appendChild(this.grabberIcon);
+    this.myToolNode.appendChild(this.lockIcon);
+    //this.myToolNode.appendChild(this.unlockIcon);
+
+    //this.unlockIcon.style.visibility = "hidden";
+
+    var closeNode = (this._closeNode = L.DomUtil.create(
+      "div",
+      className + "-close"
+    ));
+    var closeIcon = L.DomUtil.create("i");
+    closeIcon.innerHTML = closeSvg;
+    closeNode.appendChild(closeIcon);
+    L.DomEvent.on(closeNode, "click", this._handleClose, this);
+
+    var resizerNode = (this._resizerNode = L.DomUtil.create(
+      "div",
+      className + "-resizer"
+    ));
+    var resizeIcon = L.DomUtil.create("i");
+    resizeIcon.innerHTML = resizeSvg;
+    resizerNode.appendChild(resizeIcon);
+
+    L.DomEvent.on(resizerNode, "mousedown", this._handleResizeStart, this);
+
+    var contentNode = (this._contentNode = L.DomUtil.create(
+      "div",
+      className + "-contents"
+    ));
+
+    container.appendChild(innerContainer);
+
+    innerContainer.appendChild(contentNode);
+    innerContainer.appendChild(this.myToolNode);
+    innerContainer.appendChild(closeNode);
+    innerContainer.appendChild(resizerNode);
+
+    this._oldMousePos = { x: 0, y: 0 };
+  },
+
+  _handleClose: function () {
+    this.close();
+  },
+
+  _handleResizeStart: function (e) {
+    this._oldMousePos.x = e.clientX;
+    this._oldMousePos.y = e.clientY;
+
+    L.DomEvent.on(this._map, "mousemove", this._handleMouseMove, this);
+    L.DomEvent.on(this._map, "mouseup", this._handleMouseUp, this);
+
+    this._map.fire("dialog:resizestart", this);
+    this._resizing = true;
+  },
+
+  _handleMoveStart: function (e) {
+    this._oldMousePos.x = e.clientX;
+    this._oldMousePos.y = e.clientY;
+
+    L.DomEvent.on(this._map, "mousemove", this._handleMouseMove, this);
+    L.DomEvent.on(this._map, "mouseup", this._handleMouseUp, this);
+
+    this._map.fire("dialog:movestart", this);
+    this._moving = true;
+  },
+
+  _handleMouseMove: function (e) {
+    var diffX = e.originalEvent.clientX - this._oldMousePos.x,
+      diffY = e.originalEvent.clientY - this._oldMousePos.y;
+
+    // this helps prevent accidental highlighting on drag:
+    if (e.originalEvent.stopPropagation) {
+      e.originalEvent.stopPropagation();
+    }
+    if (e.originalEvent.preventDefault) {
+      e.originalEvent.preventDefault();
     }
 
-    function copyOptions(options) {
-        // Copy options to impl options for use in impl
-        if(typeof(options.imagePlaceholder) === 'undefined') {
-            domtoimage.impl.options.imagePlaceholder = defaultOptions.imagePlaceholder;
-        } else {
-            domtoimage.impl.options.imagePlaceholder = options.imagePlaceholder;
-        }
-
-        if(typeof(options.cacheBust) === 'undefined') {
-            domtoimage.impl.options.cacheBust = defaultOptions.cacheBust;
-        } else {
-            domtoimage.impl.options.cacheBust = options.cacheBust;
-        }
+    if (this._resizing) {
+      this._resize(diffX, diffY);
     }
 
-    function draw(domNode, options) {
-        return toSvg(domNode, options)
-            .then(util.makeImage)
-            .then(util.delay(100))
-            .then(function (image) {
-                var canvas = newCanvas(domNode);
-                canvas.getContext('2d').drawImage(image, 0, 0);
-                return canvas;
-            });
+    if (this._moving) {
+      this._move(diffX, diffY);
+    }
+  },
 
-        function newCanvas(domNode) {
-            var canvas = document.createElement('canvas');
-            canvas.width = options.width || util.width(domNode);
-            canvas.height = options.height || util.height(domNode);
+  _handleMouseUp: function () {
+    L.DomEvent.off(this._map, "mousemove", this._handleMouseMove, this);
+    L.DomEvent.off(this._map, "mouseup", this._handleMouseUp, this);
 
-            if (options.bgcolor) {
-                var ctx = canvas.getContext('2d');
-                ctx.fillStyle = options.bgcolor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-            }
-
-            return canvas;
-        }
+    if (this._resizing) {
+      this._resizing = false;
+      this._map.fire("dialog:resizeend", this);
     }
 
-    function cloneNode(node, filter, root) {
-        if (!root && filter && !filter(node)) return Promise.resolve();
+    if (this._moving) {
+      this._moving = false;
+      this._map.fire("dialog:moveend", this);
+    }
+  },
 
-        return Promise.resolve(node)
-            .then(makeNodeCopy)
-            .then(function (clone) {
-                return cloneChildren(node, clone, filter);
-            })
-            .then(function (clone) {
-                return processClone(node, clone);
-            });
+  _move: function (diffX, diffY) {
+    var newY = this.options.anchor[0] + diffY;
+    var newX = this.options.anchor[1] + diffX;
 
-        function makeNodeCopy(node) {
-            if (node instanceof HTMLCanvasElement) return util.makeImage(node.toDataURL());
-            return node.cloneNode(false);
-        }
+    this.options.anchor[0] = newY;
+    this.options.anchor[1] = newX;
 
-        function cloneChildren(original, clone, filter) {
-            var children = original.childNodes;
-            if (children.length === 0) return Promise.resolve(clone);
+    this._container.style.top = this.options.anchor[0] + "px";
+    this._container.style.left = this.options.anchor[1] + "px";
 
-            return cloneChildrenInOrder(clone, util.asArray(children), filter)
-                .then(function () {
-                    return clone;
-                });
+    this._map.fire("dialog:moving", this);
 
-            function cloneChildrenInOrder(parent, children, filter) {
-                var done = Promise.resolve();
-                children.forEach(function (child) {
-                    done = done
-                        .then(function () {
-                            return cloneNode(child, filter);
-                        })
-                        .then(function (childClone) {
-                            if (childClone) parent.appendChild(childClone);
-                        });
-                });
-                return done;
-            }
-        }
+    this._oldMousePos.y += diffY;
+    this._oldMousePos.x += diffX;
+  },
 
-        function processClone(original, clone) {
-            if (!(clone instanceof Element)) return clone;
+  _resize: function (diffX, diffY) {
+    var newX = this.options.size[0] + diffX;
+    var newY = this.options.size[1] + diffY;
 
-            return Promise.resolve()
-                .then(cloneStyle)
-                .then(clonePseudoElements)
-                .then(copyUserInput)
-                .then(fixSvg)
-                .then(function () {
-                    return clone;
-                });
-
-            function cloneStyle() {
-                copyStyle(window.getComputedStyle(original), clone.style);
-
-                function copyStyle(source, target) {
-                    if (source.cssText) target.cssText = source.cssText;
-                    else copyProperties(source, target);
-
-                    function copyProperties(source, target) {
-                        util.asArray(source).forEach(function (name) {
-                            target.setProperty(
-                                name,
-                                source.getPropertyValue(name),
-                                source.getPropertyPriority(name)
-                            );
-                        });
-                    }
-                }
-            }
-
-            function clonePseudoElements() {
-                [':before', ':after'].forEach(function (element) {
-                    clonePseudoElement(element);
-                });
-
-                function clonePseudoElement(element) {
-                    var style = window.getComputedStyle(original, element);
-                    var content = style.getPropertyValue('content');
-
-                    if (content === '' || content === 'none') return;
-
-                    var className = util.uid();
-                    clone.className = clone.className + ' ' + className;
-                    var styleElement = document.createElement('style');
-                    styleElement.appendChild(formatPseudoElementStyle(className, element, style));
-                    clone.appendChild(styleElement);
-
-                    function formatPseudoElementStyle(className, element, style) {
-                        var selector = '.' + className + ':' + element;
-                        var cssText = style.cssText ? formatCssText(style) : formatCssProperties(style);
-                        return document.createTextNode(selector + '{' + cssText + '}');
-
-                        function formatCssText(style) {
-                            var content = style.getPropertyValue('content');
-                            return style.cssText + ' content: ' + content + ';';
-                        }
-
-                        function formatCssProperties(style) {
-
-                            return util.asArray(style)
-                                .map(formatProperty)
-                                .join('; ') + ';';
-
-                            function formatProperty(name) {
-                                return name + ': ' +
-                                    style.getPropertyValue(name) +
-                                    (style.getPropertyPriority(name) ? ' !important' : '');
-                            }
-                        }
-                    }
-                }
-            }
-
-            function copyUserInput() {
-                if (original instanceof HTMLTextAreaElement) clone.innerHTML = original.value;
-                if (original instanceof HTMLInputElement) clone.setAttribute("value", original.value);
-            }
-
-            function fixSvg() {
-                if (!(clone instanceof SVGElement)) return;
-                clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-
-                if (!(clone instanceof SVGRectElement)) return;
-                ['width', 'height'].forEach(function (attribute) {
-                    var value = clone.getAttribute(attribute);
-                    if (!value) return;
-
-                    clone.style.setProperty(attribute, value);
-                });
-            }
-        }
+    if (newX <= this.options.maxSize[0] && newX >= this.options.minSize[0]) {
+      this.options.size[0] = newX;
+      this._container.style.width = this.options.size[0] + "px";
+      this._oldMousePos.x += diffX;
     }
 
-    function embedFonts(node) {
-        return fontFaces.resolveAll()
-            .then(function (cssText) {
-                var styleNode = document.createElement('style');
-                node.appendChild(styleNode);
-                styleNode.appendChild(document.createTextNode(cssText));
-                return node;
-            });
+    if (newY <= this.options.maxSize[1] && newY >= this.options.minSize[1]) {
+      this.options.size[1] = newY;
+      this._container.style.height = this.options.size[1] + "px";
+      this._oldMousePos.y += diffY;
     }
 
-    function inlineImages(node) {
-        return images.inlineAll(node)
-            .then(function () {
-                return node;
-            });
+    this._map.fire("dialog:resizing", this);
+  },
+
+  _updateContent: function () {
+    if (!this._content) {
+      return;
     }
 
-    function makeSvgDataUri(node, width, height) {
-        return Promise.resolve(node)
-            .then(function (node) {
-                node.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-                return new XMLSerializer().serializeToString(node);
-            })
-            .then(util.escapeXhtml)
-            .then(function (xhtml) {
-                return '<foreignObject x="0" y="0" width="100%" height="100%">' + xhtml + '</foreignObject>';
-            })
-            .then(function (foreignObject) {
-                return '<svg xmlns="http://www.w3.org/2000/svg" width="' + width + '" height="' + height + '">' +
-                    foreignObject + '</svg>';
-            })
-            .then(function (svg) {
-                return 'data:image/svg+xml;charset=utf-8,' + svg;
-            });
+    var node = this._contentNode;
+    var content =
+      typeof this._content === "function" ? this._content(this) : this._content;
+
+    if (typeof content === "string") {
+      node.innerHTML = content;
+    } else {
+      while (node.hasChildNodes()) {
+        node.removeChild(node.firstChild);
+      }
+      node.appendChild(content);
     }
+  },
 
-    function newUtil() {
-        return {
-            escape: escape,
-            parseExtension: parseExtension,
-            mimeType: mimeType,
-            dataAsUrl: dataAsUrl,
-            isDataUrl: isDataUrl,
-            canvasToBlob: canvasToBlob,
-            resolveUrl: resolveUrl,
-            getAndEncode: getAndEncode,
-            uid: uid(),
-            delay: delay,
-            asArray: asArray,
-            escapeXhtml: escapeXhtml,
-            makeImage: makeImage,
-            width: width,
-            height: height
-        };
+  _updateLayout: function () {
+    this._container.style.width = this.options.size[0] + "px";
+    this._container.style.height = this.options.size[1] + "px";
 
-        function mimes() {
-            /*
-             * Only WOFF and EOT mime types for fonts are 'real'
-             * see http://www.iana.org/assignments/media-types/media-types.xhtml
-             */
-            var WOFF = 'application/font-woff';
-            var JPEG = 'image/jpeg';
+    this._container.style.top = this.options.anchor[0] + "px";
+    this._container.style.left = this.options.anchor[1] + "px";
+  },
+});
 
-            return {
-                'woff': WOFF,
-                'woff2': WOFF,
-                'ttf': 'application/font-truetype',
-                'eot': 'application/vnd.ms-fontobject',
-                'png': 'image/png',
-                'jpg': JPEG,
-                'jpeg': JPEG,
-                'gif': 'image/gif',
-                'tiff': 'image/tiff',
-                'svg': 'image/svg+xml'
-            };
-        }
-
-        function parseExtension(url) {
-            var match = /\.([^\.\/]*?)$/g.exec(url);
-            if (match) return match[1];
-            else return '';
-        }
-
-        function mimeType(url) {
-            var extension = parseExtension(url).toLowerCase();
-            return mimes()[extension] || '';
-        }
-
-        function isDataUrl(url) {
-            return url.search(/^(data:)/) !== -1;
-        }
-
-        function toBlob(canvas) {
-            return new Promise(function (resolve) {
-                var binaryString = window.atob(canvas.toDataURL().split(',')[1]);
-                var length = binaryString.length;
-                var binaryArray = new Uint8Array(length);
-
-                for (var i = 0; i < length; i++)
-                    binaryArray[i] = binaryString.charCodeAt(i);
-
-                resolve(new Blob([binaryArray], {
-                    type: 'image/png'
-                }));
-            });
-        }
-
-        function canvasToBlob(canvas) {
-            if (canvas.toBlob)
-                return new Promise(function (resolve) {
-                    canvas.toBlob(resolve);
-                });
-
-            return toBlob(canvas);
-        }
-
-        function resolveUrl(url, baseUrl) {
-            var doc = document.implementation.createHTMLDocument();
-            var base = doc.createElement('base');
-            doc.head.appendChild(base);
-            var a = doc.createElement('a');
-            doc.body.appendChild(a);
-            base.href = baseUrl;
-            a.href = url;
-            return a.href;
-        }
-
-        function uid() {
-            var index = 0;
-
-            return function () {
-                return 'u' + fourRandomChars() + index++;
-
-                function fourRandomChars() {
-                    /* see http://stackoverflow.com/a/6248722/2519373 */
-                    return ('0000' + (Math.random() * Math.pow(36, 4) << 0).toString(36)).slice(-4);
-                }
-            };
-        }
-
-        function makeImage(uri) {
-            return new Promise(function (resolve, reject) {
-                var image = new Image();
-                image.onload = function () {
-                    resolve(image);
-                };
-                image.onerror = reject;
-                image.src = uri;
-            });
-        }
-
-        function getAndEncode(url) {
-            var TIMEOUT = 30000;
-            if(domtoimage.impl.options.cacheBust) {
-                // Cache bypass so we dont have CORS issues with cached images
-                // Source: https://developer.mozilla.org/en/docs/Web/API/XMLHttpRequest/Using_XMLHttpRequest#Bypassing_the_cache
-                url += ((/\?/).test(url) ? "&" : "?") + (new Date()).getTime();
-            }
-
-            return new Promise(function (resolve) {
-                var request = new XMLHttpRequest();
-
-                request.onreadystatechange = done;
-                request.ontimeout = timeout;
-                request.responseType = 'blob';
-                request.timeout = TIMEOUT;
-                request.open('GET', url, true);
-                request.send();
-
-                var placeholder;
-                if(domtoimage.impl.options.imagePlaceholder) {
-                    var split = domtoimage.impl.options.imagePlaceholder.split(/,/);
-                    if(split && split[1]) {
-                        placeholder = split[1];
-                    }
-                }
-
-                function done() {
-                    if (request.readyState !== 4) return;
-
-                    if (request.status !== 200) {
-                        if(placeholder) {
-                            resolve(placeholder);
-                        } else {
-                            fail('cannot fetch resource: ' + url + ', status: ' + request.status);
-                        }
-
-                        return;
-                    }
-
-                    var encoder = new FileReader();
-                    encoder.onloadend = function () {
-                        var content = encoder.result.split(/,/)[1];
-                        resolve(content);
-                    };
-                    encoder.readAsDataURL(request.response);
-                }
-
-                function timeout() {
-                    if(placeholder) {
-                        resolve(placeholder);
-                    } else {
-                        fail('timeout of ' + TIMEOUT + 'ms occured while fetching resource: ' + url);
-                    }
-                }
-
-                function fail(message) {
-                    console.error(message);
-                    resolve('');
-                }
-            });
-        }
-
-        function dataAsUrl(content, type) {
-            return 'data:' + type + ';base64,' + content;
-        }
-
-        function escape(string) {
-            return string.replace(/([.*+?^${}()|\[\]\/\\])/g, '\\$1');
-        }
-
-        function delay(ms) {
-            return function (arg) {
-                return new Promise(function (resolve) {
-                    setTimeout(function () {
-                        resolve(arg);
-                    }, ms);
-                });
-            };
-        }
-
-        function asArray(arrayLike) {
-            var array = [];
-            var length = arrayLike.length;
-            for (var i = 0; i < length; i++) array.push(arrayLike[i]);
-            return array;
-        }
-
-        function escapeXhtml(string) {
-            return string.replace(/#/g, '%23').replace(/\n/g, '%0A');
-        }
-
-        function width(node) {
-            var leftBorder = px(node, 'border-left-width');
-            var rightBorder = px(node, 'border-right-width');
-            return node.scrollWidth + leftBorder + rightBorder;
-        }
-
-        function height(node) {
-            var topBorder = px(node, 'border-top-width');
-            var bottomBorder = px(node, 'border-bottom-width');
-            return node.scrollHeight + topBorder + bottomBorder;
-        }
-
-        function px(node, styleProperty) {
-            var value = window.getComputedStyle(node).getPropertyValue(styleProperty);
-            return parseFloat(value.replace('px', ''));
-        }
-    }
-
-    function newInliner() {
-        var URL_REGEX = /url\(['"]?([^'"]+?)['"]?\)/g;
-
-        return {
-            inlineAll: inlineAll,
-            shouldProcess: shouldProcess,
-            impl: {
-                readUrls: readUrls,
-                inline: inline
-            }
-        };
-
-        function shouldProcess(string) {
-            return string.search(URL_REGEX) !== -1;
-        }
-
-        function readUrls(string) {
-            var result = [];
-            var match;
-            while ((match = URL_REGEX.exec(string)) !== null) {
-                result.push(match[1]);
-            }
-            return result.filter(function (url) {
-                return !util.isDataUrl(url);
-            });
-        }
-
-        function inline(string, url, baseUrl, get) {
-            return Promise.resolve(url)
-                .then(function (url) {
-                    return baseUrl ? util.resolveUrl(url, baseUrl) : url;
-                })
-                .then(get || util.getAndEncode)
-                .then(function (data) {
-                    return util.dataAsUrl(data, util.mimeType(url));
-                })
-                .then(function (dataUrl) {
-                    return string.replace(urlAsRegex(url), '$1' + dataUrl + '$3');
-                });
-
-            function urlAsRegex(url) {
-                return new RegExp('(url\\([\'"]?)(' + util.escape(url) + ')([\'"]?\\))', 'g');
-            }
-        }
-
-        function inlineAll(string, baseUrl, get) {
-            if (nothingToInline()) return Promise.resolve(string);
-
-            return Promise.resolve(string)
-                .then(readUrls)
-                .then(function (urls) {
-                    var done = Promise.resolve(string);
-                    urls.forEach(function (url) {
-                        done = done.then(function (string) {
-                            return inline(string, url, baseUrl, get);
-                        });
-                    });
-                    return done;
-                });
-
-            function nothingToInline() {
-                return !shouldProcess(string);
-            }
-        }
-    }
-
-    function newFontFaces() {
-        return {
-            resolveAll: resolveAll,
-            impl: {
-                readAll: readAll
-            }
-        };
-
-        function resolveAll() {
-            return readAll(document)
-                .then(function (webFonts) {
-                    return Promise.all(
-                        webFonts.map(function (webFont) {
-                            return webFont.resolve();
-                        })
-                    );
-                })
-                .then(function (cssStrings) {
-                    return cssStrings.join('\n');
-                });
-        }
-
-        function readAll() {
-            return Promise.resolve(util.asArray(document.styleSheets))
-                .then(getCssRules)
-                .then(selectWebFontRules)
-                .then(function (rules) {
-                    return rules.map(newWebFont);
-                });
-
-            function selectWebFontRules(cssRules) {
-                return cssRules
-                    .filter(function (rule) {
-                        return rule.type === CSSRule.FONT_FACE_RULE;
-                    })
-                    .filter(function (rule) {
-                        return inliner.shouldProcess(rule.style.getPropertyValue('src'));
-                    });
-            }
-
-            function getCssRules(styleSheets) {
-                var cssRules = [];
-                styleSheets.forEach(function (sheet) {
-                    try {
-                        util.asArray(sheet.cssRules || []).forEach(cssRules.push.bind(cssRules));
-                    } catch (e) {
-                        console.log('Error while reading CSS rules from ' + sheet.href, e.toString());
-                    }
-                });
-                return cssRules;
-            }
-
-            function newWebFont(webFontRule) {
-                return {
-                    resolve: function resolve() {
-                        var baseUrl = (webFontRule.parentStyleSheet || {}).href;
-                        return inliner.inlineAll(webFontRule.cssText, baseUrl);
-                    },
-                    src: function () {
-                        return webFontRule.style.getPropertyValue('src');
-                    }
-                };
-            }
-        }
-    }
-
-    function newImages() {
-        return {
-            inlineAll: inlineAll,
-            impl: {
-                newImage: newImage
-            }
-        };
-
-        function newImage(element) {
-            return {
-                inline: inline
-            };
-
-            function inline(get) {
-                if (util.isDataUrl(element.src)) return Promise.resolve();
-
-                return Promise.resolve(element.src)
-                    .then(get || util.getAndEncode)
-                    .then(function (data) {
-                        return util.dataAsUrl(data, util.mimeType(element.src));
-                    })
-                    .then(function (dataUrl) {
-                        return new Promise(function (resolve, reject) {
-                            element.onload = resolve;
-                            element.onerror = reject;
-                            element.src = dataUrl;
-                        });
-                    });
-            }
-        }
-
-        function inlineAll(node) {
-            if (!(node instanceof Element)) return Promise.resolve(node);
-
-            return inlineBackground(node)
-                .then(function () {
-                    if (node instanceof HTMLImageElement)
-                        return newImage(node).inline();
-                    else
-                        return Promise.all(
-                            util.asArray(node.childNodes).map(function (child) {
-                                return inlineAll(child);
-                            })
-                        );
-                });
-
-            function inlineBackground(node) {
-                var background = node.style.getPropertyValue('background');
-
-                if (!background) return Promise.resolve(node);
-
-                return inliner.inlineAll(background)
-                    .then(function (inlined) {
-                        node.style.setProperty(
-                            'background',
-                            inlined,
-                            node.style.getPropertyPriority('background')
-                        );
-                    })
-                    .then(function () {
-                        return node;
-                    });
-            }
-        }
-    }
-})(this);
+L.control.dialog = function (options) {
+  return new L.Control.Dialog(options);
+};

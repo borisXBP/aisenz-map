@@ -23,4 +23,4 @@ gulp.task(
   })
 );
 
-gulp.task("MiniMap", gulp.series("MiniMap-js", "MiniMap-images"));
+gulp.task("MiniMap", gulp.series(/* "MiniMap-js", */ "MiniMap-images"));

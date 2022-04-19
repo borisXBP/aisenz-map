@@ -1,10 +1,12 @@
 {
 	"name": "aisenz-map",
-	"version": "1.0.0-0.0.8",
+	"version": "1.0.0-0.1.7",
 	"description": "一款基于 leaflet 开发的综合地图插件",
 	"main": "src/index.js",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"boris": "gulp all",
+		"postboris": "scp -r /Users/aisenz/boris/work/aisenz-map/lib/** /Users/aisenz/boris/home_assistance/frontend/node_modules/aisenz-map/ && scp -r /Users/aisenz/boris/work/aisenz-map/lib/** /Users/aisenz/boris/home_assistance/frontend/hass_frontend/static/map/ "
 	},
 	"repository": {
 		"type": "git",
