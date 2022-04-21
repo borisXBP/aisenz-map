@@ -14,6 +14,9 @@ const pluginList = [
   "boris-download",
   "boris-fallBack",
   "boris-dialog",
+  "pin",
+  "geometryutil",
+  /*   "mousePosition", */
 ];
 
 gulp.task("all", gulp.series("base", ...pluginList, "change-path"));

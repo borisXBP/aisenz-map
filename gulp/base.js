@@ -46,4 +46,14 @@ gulp.task(
   })
 );
 
-gulp.task("base", gulp.series("clean", "leaflet-js", "leaflet-css"));
+gulp.task(
+  "leaflet-images",
+  gulp.series(function () {
+    return gulp.src(["./leaflet/images/*.png"]).pipe(gulp.dest("./images/"));
+  })
+);
+
+gulp.task(
+  "base",
+  gulp.series("clean", "leaflet-js", "leaflet-css", "leaflet-images")
+);

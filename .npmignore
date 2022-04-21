@@ -13,5 +13,5 @@ lib/
 gulp
 gulp/
 node_modules
-node_modules/
+borisPlugin/Leaflet.MousePosition/node_modules
 
