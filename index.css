@@ -782,45 +782,43 @@ body {
   }
 
 .leaflet-control-fallBack a {
-  background:#fff url(./img/fallBack.png) no-repeat 0 0;
-  background-size:26px 26px;
-  }
-  .leaflet-touch .leaflet-control-fallBack a {
-    background-position: 2px 2px;
-    }
-   .leaflet-control-fallBack a {
-    background-position:0 -26px;
-    }
-   .leaflet-control-fallBack a {
-    background-position: 2px -24px;
-    }
+  background: #fff url(./img/fallBack.png) no-repeat 0 0;
+  background-size: 48px 48px;
+}
+.leaflet-touch .leaflet-control-fallBack a {
+  background-position: 2px 2px;
+}
+.leaflet-control-fallBack a {
+  background-position: 0 -26px;
+}
+.leaflet-control-fallBack a {
+  background-position: 2px -24px;
+}
 
 /* Do not combine these two rules; IE will break. */
 .leaflet-container:-webkit-full-screen {
-  width:100%!important;
-  height:100%!important;
-  }
+  width: 100% !important;
+  height: 100% !important;
+}
 .leaflet-container.leaflet-fullscreen-on {
-  width:100%!important;
-  height:100%!important;
-  }
+  width: 100% !important;
+  height: 100% !important;
+}
 
 .leaflet-pseudo-fullscreen {
-  position:fixed!important;
-  width:100%!important;
-  height:100%!important;
-  top:0!important;
-  left:0!important;
-  z-index:99999;
-  }
+  position: fixed !important;
+  width: 100% !important;
+  height: 100% !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 99999;
+}
 
-@media
-  (-webkit-min-device-pixel-ratio:2),
-  (min-resolution:192dpi) {
-    .leaflet-control-fallBack a {
-      background-image:url(./img/fallBack.png);
-    }
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .leaflet-control-fallBack a {
+    background-image: url(./img/fallBack.png);
   }
+}
 
 .leaflet-control-dialog {
   position: absolute;

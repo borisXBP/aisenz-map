@@ -6,7 +6,9 @@
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"boris": "gulp all",
-		"postboris": "zx ./boris.mjs"
+		"postboris": "zx ./boris.mjs",
+		"b": "gulp all",
+		"postb": "zx ./boris.mjs"
 	},
 	"repository": {
 		"type": "git",

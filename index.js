@@ -489,7 +489,7 @@ L.Control.Dialog = L.Control.extend({
   options: {
     size: [300, 300],
     minSize: [100, 100],
-    maxSize: [600, 500],
+    maxSize: [6000, 6000],
     anchor: [250, 250],
     position: "topleft",
     initOpen: true,
@@ -1330,6 +1330,8 @@ L.control.dialog = function (options) {
     },
   });
 })();
+
+
 
 ;!(function () {
   L.Polyline._flat =
